@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration PUBLIC "-//log4j/log4j Configuration//EN" "log4j.dtd">
+ 
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+    <appender name="RollingAppender" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="./logs/usg.log" />
+        <param name = "MaxFileSize" value = "1MB"/>
+        <param name = "MaxBackupIndex" value = "200"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%p\t%d\t%c\t%m%n"/>        
+        </layout>
+    </appender>
+    
+    <appender name="MongoDB" class="org.log4mongo.MongoDbAppender">
+        <param name="hostname" value="192.168.2.60" />
+        <param name="port" value="27017" />        
+        <param name="databaseName" value="usgAuditLog" />
+        <param name="collectionName" value="auditlog" />
+        <param name="userName" value="usgqaenv"/>
+        <param name="password" value="usgqaenv@123"/>
+    </appender>
+ 
+    <root>
+        <priority value="INFO"/>
+        <appender-ref ref="RollingAppender" />
+    </root>
+</log4j:configuration>
