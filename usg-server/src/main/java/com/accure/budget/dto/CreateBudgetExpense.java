@@ -54,6 +54,7 @@ public class CreateBudgetExpense extends Common {
     private String incomeBudgetId;
     private String extraProvisionId;
     private String isExtraProvisioned;
+    private String prevReqAmount;
 
     public String getSectorName() {
         return sectorName;
@@ -381,5 +382,13 @@ public class CreateBudgetExpense extends Common {
 
     public void setIsExtraProvisioned(String isExtraProvisioned) {
         this.isExtraProvisioned = isExtraProvisioned;
+    }
+
+    public String getPrevReqAmount() {
+        return prevReqAmount;
+    }
+
+    public void setPrevReqAmount(String prevReqAmount) {
+        this.prevReqAmount = prevReqAmount;
     }
 }

@@ -5,10 +5,13 @@
  */
 package com.accure.finance.manager;
 
+import com.accure.budget.dto.CreateIncomeBudget;
+import com.accure.budget.dto.ExpenseBudget;
 import com.accure.finance.dto.ContraVoucher;
 import com.accure.finance.dto.DDO;
 import com.accure.finance.dto.JournalVoucher;
 import com.accure.finance.dto.Ledger;
+import com.accure.finance.dto.LedgerCategory;
 import com.accure.finance.dto.LedgerList;
 import com.accure.finance.dto.Location;
 import com.accure.finance.dto.ManageOpeningBalance;
@@ -59,7 +62,7 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
  */
 public class DepositManager {
 
-    public ByteArrayOutputStream depositReportPdfStatement(String date, String voucherdata, String ledger, String path, String fin) throws DocumentException, FileNotFoundException, Exception {
+    public ByteArrayOutputStream depositReportPdfStatement(String date, String voucherdata, String ledger, String path, String fin, String currentYear) throws DocumentException, FileNotFoundException, Exception {
         double openingBalance = 0.00;
         double closingBalance = 0.0;
         Long dateVD = 0L;
@@ -68,9 +71,22 @@ public class DepositManager {
         double totalCrAmount = 0.0;
         double cbl = 0.0;
         String cbl1 = "";
+        String financialYearId = "";
 
+        HashMap<String, String> conditionMap = new HashMap<String, String>();
+        conditionMap.put("year", currentYear);
+        conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        String finIdJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.BUDGET_FINACIAL_YEAR_TABLE, conditionMap);
+        if (finIdJson != null && !finIdJson.isEmpty()) {
+            List<com.accure.budget.dto.FinancialYear> finIdList = new Gson().fromJson(finIdJson, new TypeToken<List<com.accure.budget.dto.FinancialYear>>() {
+            }.getType());
+            com.accure.budget.dto.FinancialYear finIdListObj = finIdList.get(0);
+            financialYearId = ((LinkedTreeMap<String, String>) finIdListObj.getId()).get("$oid");
+        }
+        
         HashMap<String, String> conditionMap1 = new HashMap<String, String>();
         conditionMap1.put("ledgerId", ledger);
+        conditionMap1.put("financialYear", financialYearId);
         conditionMap1.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
 
         String ledgerType = null;
@@ -78,7 +94,64 @@ public class DepositManager {
         String ledgerJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.MANAGE_OPENING_BALANCE_TABLE, conditionMap1);
         if (ledgerJson == null || ledgerJson.isEmpty()) {
 
+//            openingBalance = 0.00;
+        if(!ledger.equalsIgnoreCase("") && ledger != null){
+            
+        Ledger led = new ManageOpeningBalanceManager().checkLedgerIsBudgetTypeOrNot(ledger);
+        
+        String budType = led.getBudgetType();
+        if(budType.equalsIgnoreCase("Yes")){
+        List<LedgerCategory> lc = new ManageOpeningBalanceManager().checkLedgerIsIncomeOrBudgetCategory(ledger);
+        if(lc != null){
+            
+            String ledgerCategory = lc.get(0).getLedgerCategory();
+            
+            if(ledgerCategory.equalsIgnoreCase("Income")){
+              List<CreateIncomeBudget>  cib = new ManageOpeningBalanceManager().getSanctionedAndExtraProvisionAmount(ledger,financialYearId);
+              if(cib != null){
+                  for(int ib = 0; ib <cib.size(); ib++){
+                  if(cib.get(ib).getIsSanctioned().equalsIgnoreCase("true")){
+                      openingBalance = openingBalance + (Double.parseDouble(cib.get(ib).getSanctionedAmount()))*100000;
+                  }
+                  if(cib.get(ib).getIsExtraProvisioned().equalsIgnoreCase("true")){
+                      openingBalance = openingBalance + (Double.parseDouble(cib.get(ib).getExtraProvisionAmount()))*100000;
+                  }
+                  }
+                  
+              }else{
             openingBalance = 0.00;
+        }
+            openingBalance = - openingBalance;
+            }
+            else if(ledgerCategory.equalsIgnoreCase("Expense")){
+             
+                List<ExpenseBudget>  ceb = new ManageOpeningBalanceManager().getSanctionedAndExtraProvisionAmountExpense(ledger,financialYearId);
+              if(ceb != null){
+                  for(int eb = 0; eb <ceb.size(); eb++){
+                  if(ceb.get(eb).getIsSanctioned().equalsIgnoreCase("true")){
+                      openingBalance = openingBalance + (Double.parseDouble(ceb.get(eb).getSanctionedAmount()))*100000;
+                  }
+                  if(ceb.get(eb).getIsExtraProvisioned().equalsIgnoreCase("true")){
+                      openingBalance = openingBalance + (Double.parseDouble(ceb.get(eb).getExtraProvisionAmount()))*100000;
+                  }
+
+                  }
+              }else{
+            openingBalance = 0.00;
+        }
+            openingBalance = + openingBalance;
+            }else{
+                openingBalance = 0.00;
+            }
+        }else{
+            openingBalance = 0.00;
+        }
+
+        }else{
+            openingBalance = 0.00;
+        }
+        }
+        
         } else {
             List<ManageOpeningBalance> openingBalanceList = new Gson().fromJson(ledgerJson, new TypeToken<List<ManageOpeningBalance>>() {
             }.getType());
@@ -98,7 +171,7 @@ public class DepositManager {
             }
         }
 
-        HashMap<String, String> conditionMap = new HashMap<String, String>();
+//        HashMap<String, String> conditionMap = new HashMap<String, String>();
         ReceiptVoucher rvobj = new Gson().fromJson(voucherdata, new TypeToken<ReceiptVoucher>() {
         }.getType());
 
@@ -148,23 +221,50 @@ public class DepositManager {
         HashMap<String, String> test = new HashMap<String, String>();
 
         if (receiptVoucherOutput != null && !receiptVoucherOutput.isEmpty() && !receiptVoucherOutput.equals("[]")) {
-            int k = 0;
-            int l = 0;
+            int recVouLedSize = 0;
+            int recVouLedSizeCond = 0;
             for (ReceiptVoucher recVou : recVocList) {
-                for (k = 0; k < recVou.getLedgerList().size(); k++) {
-                    if ((recVou.getLedgerList().get(k).getLedger()) != null) {
-                        if (((recVou.getLedgerList().get(k).getLedger()).equals(ledger)) && ((recVou.getPostingStatus().equals("Posted")))) {
+                for (recVouLedSize = 0; recVouLedSize < recVou.getLedgerList().size(); recVouLedSize++) {
+                    if ((recVou.getLedgerList().get(recVouLedSize).getLedger()) != null) {
+                        if((!ledger.equals("")) && (!ledger.equals(null))){
+                        if (((recVou.getLedgerList().get(recVouLedSize).getLedger()).equals(ledger)) && ((recVou.getPostingStatus().equals("Posted")))&& ((recVou.getLedgerList().get(recVouLedSize).getGroupName()).equalsIgnoreCase("Deposit Group"))) {
 
-                            for (l = 0; l < recVou.getLedgerList().size(); l++) {
-                                if ((recVou.getLedgerList().get(l).getDrCr()).equals("Cr")) {
-                                    recVou.getLedgerList().get(l).setVoucherDtReport(recVou.getVoucherDate());
-                                    recVou.getLedgerList().get(l).setVoucherNoReport(recVou.getVoucherNo());
-                                    recVou.getLedgerList().get(l).setVoucherTyReport(recVou.getVoucherName());
-                                    recVou.getLedgerList().get(l).setVoucherDateInMilliSecondReport(recVou.getVoucherDateInMilliSecond());
-                                    recVocFinalList.add(recVou.getLedgerList().get(l));
+                            for (recVouLedSizeCond = 0; recVouLedSizeCond < recVou.getLedgerList().size(); recVouLedSizeCond++) {
+//                                if (((recVou.getLedgerList().get(l).getDrCr()).equals("Cr"))) {
+                                if (((recVou.getLedgerList().get(recVouLedSizeCond).getDrCr()).equals("Cr")) && ((recVou.getLedgerList().get(recVouLedSizeCond).getGroupName()).equalsIgnoreCase("Deposit Group")) && ((recVou.getLedgerList().get(recVouLedSizeCond).getLedger()).equals(ledger))) {
+                                    recVou.getLedgerList().get(recVouLedSizeCond).setVoucherDtReport(recVou.getVoucherDate());
+                                    recVou.getLedgerList().get(recVouLedSizeCond).setVoucherNoReport(recVou.getVoucherNo());
+                                    recVou.getLedgerList().get(recVouLedSizeCond).setVoucherTyReport(recVou.getVoucherName());
+                                    recVou.getLedgerList().get(recVouLedSizeCond).setVoucherDateInMilliSecondReport(recVou.getVoucherDateInMilliSecond());
+                                    recVou.getLedgerList().get(recVouLedSizeCond).setGroupNameReport(recVou.getLedgerList().get(recVouLedSize).getGroupName());
+                                    recVocFinalList.add(recVou.getLedgerList().get(recVouLedSizeCond));
 
                                 }
+//                                if (((recVou.getLedgerList().get(l).getDrCr()).equals("Dr"))) {
+//                                    recVou.getLedgerList().get(l).setVoucherDtReport(recVou.getVoucherDate());
+//                                    recVou.getLedgerList().get(l).setVoucherNoReport(recVou.getVoucherNo());
+//                                    recVou.getLedgerList().get(l).setVoucherTyReport(recVou.getVoucherName());
+//                                    recVou.getLedgerList().get(l).setVoucherDateInMilliSecondReport(recVou.getVoucherDateInMilliSecond());
+//                                    recVocFinalList.add(recVou.getLedgerList().get(l));
+//
+//                                }
                             }
+                        }
+                    }else{
+                         if (((recVou.getPostingStatus().equals("Posted")))&& ((recVou.getLedgerList().get(recVouLedSize).getGroupName()).equalsIgnoreCase("Deposit Group"))) {
+
+//                            for (l = 0; l < recVou.getLedgerList().size(); l++) {
+                                if(((recVou.getLedgerList().get(recVouLedSize).getGroupName()).equalsIgnoreCase("Deposit Group"))){
+                                    recVou.getLedgerList().get(recVouLedSize).setVoucherDtReport(recVou.getVoucherDate());
+                                    recVou.getLedgerList().get(recVouLedSize).setVoucherNoReport(recVou.getVoucherNo());
+                                    recVou.getLedgerList().get(recVouLedSize).setVoucherTyReport(recVou.getVoucherName());
+                                    recVou.getLedgerList().get(recVouLedSize).setVoucherDateInMilliSecondReport(recVou.getVoucherDateInMilliSecond());
+                                    recVou.getLedgerList().get(recVouLedSize).setGroupNameReport(recVou.getLedgerList().get(recVouLedSize).getGroupName());
+                                    recVocFinalList.add(recVou.getLedgerList().get(recVouLedSize));
+                                }
+
+//                            }
+                        }   
                         }
                     }
                 }
@@ -215,24 +315,48 @@ public class DepositManager {
 
         List<LedgerList> payVocFinalList = new ArrayList<LedgerList>();
         if (paymentVoucherOutput != null && !paymentVoucherOutput.isEmpty() && !paymentVoucherOutput.equals("[]")) {
-            int k1 = 0;
-            int l1 = 0;
+            int payVouLedSize = 0;
+            int payVouLedSizeCond = 0;
             for (PaymentVoucher payVou : payVocList) {
-                for (k1 = 0; k1 < payVou.getLedgerList().size(); k1++) {
-                    if ((payVou.getLedgerList().get(k1).getLedger()) != null) {
-                        if (((payVou.getLedgerList().get(k1).getLedger()).equals(ledger)) && ((payVou.getPostingStatus().equals("Posted")))) {
+                for (payVouLedSize = 0; payVouLedSize < payVou.getLedgerList().size(); payVouLedSize++) {
+                    if ((payVou.getLedgerList().get(payVouLedSize).getLedger()) != null) {
+                        if((!ledger.equals("")) && (!ledger.equals(null))){
+                        if (((payVou.getLedgerList().get(payVouLedSize).getLedger()).equals(ledger)) && ((payVou.getPostingStatus().equals("Posted")))&& ((payVou.getLedgerList().get(payVouLedSize).getGroupName()).equalsIgnoreCase("Deposit Group"))) {
 
-                            for (l1 = 0; l1 < payVou.getLedgerList().size(); l1++) {
-                                if ((payVou.getLedgerList().get(l1).getDrCr()).equals("Dr")) {
-                                    payVou.getLedgerList().get(l1).setVoucherDtReport(payVou.getVoucherDate());
-                                    payVou.getLedgerList().get(l1).setVoucherNoReport(payVou.getVoucherNo());
-                                    payVou.getLedgerList().get(l1).setVoucherTyReport(payVou.getVoucherName());
-                                    payVou.getLedgerList().get(l1).setVoucherDateInMilliSecondReport(payVou.getVoucherDateInMilliSecond());
-                                    payVocFinalList.add(payVou.getLedgerList().get(l1));
-
+                            for (payVouLedSizeCond = 0; payVouLedSizeCond < payVou.getLedgerList().size(); payVouLedSizeCond++) {
+                                if (((payVou.getLedgerList().get(payVouLedSizeCond).getDrCr()).equals("Dr")) && ((payVou.getLedgerList().get(payVouLedSizeCond).getLedger()).equals(ledger)) && ((payVou.getLedgerList().get(payVouLedSizeCond).getGroupName()).equalsIgnoreCase("Deposit Group"))) {
+                                    payVou.getLedgerList().get(payVouLedSizeCond).setVoucherDtReport(payVou.getVoucherDate());
+                                    payVou.getLedgerList().get(payVouLedSizeCond).setVoucherNoReport(payVou.getVoucherNo());
+                                    payVou.getLedgerList().get(payVouLedSizeCond).setVoucherTyReport(payVou.getVoucherName());
+                                    payVou.getLedgerList().get(payVouLedSizeCond).setVoucherDateInMilliSecondReport(payVou.getVoucherDateInMilliSecond());
+                                    payVou.getLedgerList().get(payVouLedSizeCond).setGroupNameReport(payVou.getLedgerList().get(payVouLedSize).getGroupName());
+                                    payVocFinalList.add(payVou.getLedgerList().get(payVouLedSizeCond));
                                 }
+                                }
+//                                if (((payVou.getLedgerList().get(l1).getDrCr()).equals("Cr")) && ((payVou.getLedgerList().get(l1).getLedger()).equals(ledger))) {
+//                                    payVou.getLedgerList().get(l1).setVoucherDtReport(payVou.getVoucherDate());
+//                                    payVou.getLedgerList().get(l1).setVoucherNoReport(payVou.getVoucherNo());
+//                                    payVou.getLedgerList().get(l1).setVoucherTyReport(payVou.getVoucherName());
+//                                    payVou.getLedgerList().get(l1).setVoucherDateInMilliSecondReport(payVou.getVoucherDateInMilliSecond());
+//                                    payVocFinalList.add(payVou.getLedgerList().get(l1));
+//
+//                                }
                             }
+                        }else{
+                         if (((payVou.getPostingStatus().equals("Posted")))&& ((payVou.getLedgerList().get(payVouLedSize).getGroupName()).equalsIgnoreCase("Deposit Group"))) {
+
+//                            for (l1 = 0; l1 < payVou.getLedgerList().size(); l1++) {
+                                    if(((payVou.getLedgerList().get(payVouLedSize).getGroupName()).equalsIgnoreCase("Deposit Group"))){
+                                    payVou.getLedgerList().get(payVouLedSize).setVoucherDtReport(payVou.getVoucherDate());
+                                    payVou.getLedgerList().get(payVouLedSize).setVoucherNoReport(payVou.getVoucherNo());
+                                    payVou.getLedgerList().get(payVouLedSize).setVoucherTyReport(payVou.getVoucherName());
+                                    payVou.getLedgerList().get(payVouLedSize).setVoucherDateInMilliSecondReport(payVou.getVoucherDateInMilliSecond());
+                                    payVou.getLedgerList().get(payVouLedSize).setGroupNameReport(payVou.getLedgerList().get(payVouLedSize).getGroupName());
+                                    payVocFinalList.add(payVou.getLedgerList().get(payVouLedSize));
+                            }
+//                            }
                         }
+                    }
                     }
                 }
 
@@ -281,50 +405,50 @@ public class DepositManager {
 
         List<LedgerList> jouVocFinalList = new ArrayList<LedgerList>();
         if (journalVoucherOutput != null && !journalVoucherOutput.isEmpty() && !journalVoucherOutput.equals("[]")) {
-            int k2 = 0;
-            int l2 = 0;
+            int jouVouLedSize = 0;
+            int jouVouLedSizeCond = 0;
             for (JournalVoucher jouVou : jouVocList) {
-                for (k2 = 0; k2 < jouVou.getLedgerList().size(); k2++) {
-                    if ((jouVou.getLedgerList().get(k2).getLedger()) != null) {
-                        if (((jouVou.getLedgerList().get(k2).getLedger()).equals(ledger)) && ((jouVou.getPostingStatus().equals("Posted")))) {
+                for (jouVouLedSize = 0; jouVouLedSize < jouVou.getLedgerList().size(); jouVouLedSize++) {
+                    if ((jouVou.getLedgerList().get(jouVouLedSize).getLedger()) != null) {
+                        if((!ledger.equals("")) && (!ledger.equals(null))){
+                        if (((jouVou.getLedgerList().get(jouVouLedSize).getLedger()).equals(ledger)) && ((jouVou.getPostingStatus().equals("Posted")))&& ((jouVou.getLedgerList().get(jouVouLedSize).getGroupName()).equalsIgnoreCase("Deposit Group"))) {
 
-//                    if (((jouVou.getLedgerList().get(l2).getDrCr()).equals("Cr"))) {
-//                        for (l2 = k2 + 1; l2 < jouVou.getLedgerList().size(); l2++) {
-//                            jouVou.getLedgerList().get(l2).setVoucherDtReport(jouVou.getVoucherDate());
-//                            jouVou.getLedgerList().get(l2).setVoucherNoReport(jouVou.getVoucherNo());
-//                            jouVou.getLedgerList().get(l2).setVoucherTyReport(jouVou.getVoucherName());
-//                            jouVou.getLedgerList().get(l2).setVoucherDateInMilliSecondReport(jouVou.getVoucherDateInMilliSecond());
-//                            jouVocFinalList.add(jouVou.getLedgerList().get(l2));
-//
-//                        }
-//                    } else if (((jouVou.getLedgerList().get(l2).getDrCr()).equals("Dr"))) {
-//                        for (l2 = k2 + 1; l2 < jouVou.getLedgerList().size(); l2++) {
-//                            jouVou.getLedgerList().get(l2).setVoucherDtReport(jouVou.getVoucherDate());
-//                            jouVou.getLedgerList().get(l2).setVoucherNoReport(jouVou.getVoucherNo());
-//                            jouVou.getLedgerList().get(l2).setVoucherTyReport(jouVou.getVoucherName());
-//                            jouVou.getLedgerList().get(l2).setVoucherDateInMilliSecondReport(jouVou.getVoucherDateInMilliSecond());
-//                            jouVocFinalList.add(jouVou.getLedgerList().get(l2));
-//
-//                        }
-//                    }
-                            for (l2 = 0; l2 < jouVou.getLedgerList().size(); l2++) {
-                                if (((jouVou.getLedgerList().get(l2).getDrCr()).equals("Dr")) && ((jouVou.getLedgerList().get(l2).getLedger()).equals(ledger))) {
-                                    jouVou.getLedgerList().get(l2).setVoucherDtReport(jouVou.getVoucherDate());
-                                    jouVou.getLedgerList().get(l2).setVoucherNoReport(jouVou.getVoucherNo());
-                                    jouVou.getLedgerList().get(l2).setVoucherTyReport(jouVou.getVoucherName());
-                                    jouVou.getLedgerList().get(l2).setVoucherDateInMilliSecondReport(jouVou.getVoucherDateInMilliSecond());
-                                    jouVocFinalList.add(jouVou.getLedgerList().get(l2));
 
-                                } else if (((jouVou.getLedgerList().get(l2).getDrCr()).equals("Cr")) && ((jouVou.getLedgerList().get(l2).getLedger()).equals(ledger))) {
-                                    jouVou.getLedgerList().get(l2).setVoucherDtReport(jouVou.getVoucherDate());
-                                    jouVou.getLedgerList().get(l2).setVoucherNoReport(jouVou.getVoucherNo());
-                                    jouVou.getLedgerList().get(l2).setVoucherTyReport(jouVou.getVoucherName());
-                                    jouVou.getLedgerList().get(l2).setVoucherDateInMilliSecondReport(jouVou.getVoucherDateInMilliSecond());
-                                    jouVocFinalList.add(jouVou.getLedgerList().get(l2));
+                            for (jouVouLedSizeCond = 0; jouVouLedSizeCond < jouVou.getLedgerList().size(); jouVouLedSizeCond++) {
+                                if (((jouVou.getLedgerList().get(jouVouLedSizeCond).getDrCr()).equals("Dr")) && ((jouVou.getLedgerList().get(jouVouLedSizeCond).getLedger()).equals(ledger)) && ((jouVou.getLedgerList().get(jouVouLedSizeCond).getGroupName()).equalsIgnoreCase("Deposit Group"))) {
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setVoucherDtReport(jouVou.getVoucherDate());
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setVoucherNoReport(jouVou.getVoucherNo());
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setVoucherTyReport(jouVou.getVoucherName());
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setVoucherDateInMilliSecondReport(jouVou.getVoucherDateInMilliSecond());
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setGroupNameReport(jouVou.getLedgerList().get(jouVouLedSize).getGroupName());
+                                    jouVocFinalList.add(jouVou.getLedgerList().get(jouVouLedSizeCond));
+
+                                } else if (((jouVou.getLedgerList().get(jouVouLedSizeCond).getDrCr()).equals("Cr")) && ((jouVou.getLedgerList().get(jouVouLedSizeCond).getLedger()).equals(ledger)) && ((jouVou.getLedgerList().get(jouVouLedSizeCond).getGroupName()).equalsIgnoreCase("Deposit Group"))) {
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setVoucherDtReport(jouVou.getVoucherDate());
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setVoucherNoReport(jouVou.getVoucherNo());
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setVoucherTyReport(jouVou.getVoucherName());
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setVoucherDateInMilliSecondReport(jouVou.getVoucherDateInMilliSecond());
+                                    jouVou.getLedgerList().get(jouVouLedSizeCond).setGroupNameReport(jouVou.getLedgerList().get(jouVouLedSize).getGroupName());
+                                    jouVocFinalList.add(jouVou.getLedgerList().get(jouVouLedSizeCond));
 
                                 }
                             }
                         }
+                    }else{
+                         if (((jouVou.getPostingStatus().equals("Posted")))&& ((jouVou.getLedgerList().get(jouVouLedSize).getGroupName()).equalsIgnoreCase("Deposit Group"))) {
+
+//                            for (l2 = 0; l2 < jouVou.getLedgerList().size(); l2++) {
+                                if(((jouVou.getLedgerList().get(jouVouLedSize).getGroupName()).equalsIgnoreCase("Deposit Group"))){
+                                    jouVou.getLedgerList().get(jouVouLedSize).setVoucherDtReport(jouVou.getVoucherDate());
+                                    jouVou.getLedgerList().get(jouVouLedSize).setVoucherNoReport(jouVou.getVoucherNo());
+                                    jouVou.getLedgerList().get(jouVouLedSize).setVoucherTyReport(jouVou.getVoucherName());
+                                    jouVou.getLedgerList().get(jouVouLedSize).setVoucherDateInMilliSecondReport(jouVou.getVoucherDateInMilliSecond());
+                                    jouVou.getLedgerList().get(jouVouLedSize).setGroupNameReport(jouVou.getLedgerList().get(jouVouLedSize).getGroupName());
+                                    jouVocFinalList.add(jouVou.getLedgerList().get(jouVouLedSize));
+                                }
+//                            }
+                        }
+                    }
                     }
                 }
 
@@ -485,6 +609,7 @@ public class DepositManager {
         table2.setWidthPercentage(100);
         table2.setWidths(onecolumnwidth);
 
+        if((!ledger.equals("")) && (!ledger.equals(null))){
         PdfPCell table2cella = null;
         if (lLobj.getLedger() != null) {
             String ledJson = DBManager.getDbConnection().fetch(ApplicationConstants.LEDGER_TABLE, lLobj.getLedger());
@@ -504,6 +629,7 @@ public class DepositManager {
         }
         table2.addCell(table2cella);
         document.add(table2);
+        }
 
         PdfPTable table3 = new PdfPTable(2);
         table3.setWidthPercentage(100);
@@ -525,7 +651,7 @@ public class DepositManager {
         PdfPCell table3cellb = null;
         String drCrval = drCrType;
         String opBal = roundTwoDecimalPoints(openingBalance);
-
+if((!ledger.equals("")) && (!ledger.equals(null))){
         if (drCrval != null) {
             if (drCrval.equals("Dr")) {
                 table3cellb = new PdfPCell(new Paragraph("Opening Balance :  " + opBal + " " + drCrval, font2));
@@ -538,7 +664,9 @@ public class DepositManager {
         } else {
             table3cellb = new PdfPCell(new Paragraph("Opening Balance :  " + opBal + " ", font2));
         }
-
+}else{
+    table3cellb = new PdfPCell(new Paragraph(" "));
+}
         table3cellb.setBorderColor(BaseColor.BLACK);
         table3cellb.setBackgroundColor(BaseColor.WHITE);
         table3cellb.setHorizontalAlignment(Element.ALIGN_RIGHT);
@@ -677,6 +805,8 @@ public class DepositManager {
                 PdfPCell table6cell3 = null;
 
                 if (merged.get(i).getLedger() != null) {
+                    
+                    if((merged.get(i).getGroupName()).equalsIgnoreCase("Deposit Group")){
                     String ledJson = DBManager.getDbConnection().fetch(ApplicationConstants.LEDGER_TABLE, merged.get(i).getLedger());
 
                     List<Ledger> ledgerList = new Gson().fromJson(ledJson, new TypeToken<List<Ledger>>() {
@@ -686,6 +816,9 @@ public class DepositManager {
 
                     merged.get(i).setLedgerName(ledgerName);
                     table6cell3 = new PdfPCell(new Paragraph(merged.get(i).getLedgerName(), font3));
+                    }else{
+                        table6cell3 = new PdfPCell(new Paragraph(" ", font3));
+                    }
                     table6cell3.setBorderColor(BaseColor.BLACK);
                     table6cell3.setBackgroundColor(BaseColor.WHITE);
                     table6cell3.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -725,8 +858,43 @@ public class DepositManager {
                 String text = merged.get(i).getDrAmount();
                 double value = Double.parseDouble(text);
                 String textx = roundTwoDecimalPoints(value);
-                totalDrAmount = totalDrAmount + value;
+//                totalDrAmount = totalDrAmount + value;
 
+                table6cell7 = new PdfPCell(new Paragraph(textx, font3));
+//                table6cell7.setBorderColor(BaseColor.BLACK);
+//                table6cell7.setBackgroundColor(BaseColor.WHITE);
+//                table6cell7.setHorizontalAlignment(Element.ALIGN_CENTER);
+//                table6cell7.setVerticalAlignment(Element.ALIGN_MIDDLE);
+////            table6cell7.setBorder(Rectangle.NO_BORDER);
+//                table6cell7.setPaddingTop(15f);
+//                table6cell7.setPaddingLeft(2f);
+
+                String text1 = merged.get(i).getCrAmount();
+                double value1 = Double.parseDouble(text1);
+                String texty = roundTwoDecimalPoints(value1);
+//                totalCrAmount = totalCrAmount + value1;
+
+                PdfPCell table6cell8 = null;
+                table6cell8 = new PdfPCell(new Paragraph(texty, font3));
+//                table6cell8.setBorderColor(BaseColor.BLACK);
+//                table6cell8.setBackgroundColor(BaseColor.WHITE);
+//                table6cell8.setHorizontalAlignment(Element.ALIGN_CENTER);
+//                table6cell8.setVerticalAlignment(Element.ALIGN_MIDDLE);
+////            table6cell8.setBorder(Rectangle.NO_BORDER);
+//                table6cell8.setPaddingTop(15f);
+//                table6cell8.setPaddingLeft(2f);
+
+                if(textx.equalsIgnoreCase("0.00")){
+                    textx = texty;
+                }
+                if(texty.equalsIgnoreCase("0.00")){
+                    texty = textx;
+                }
+                double valueDup = Double.parseDouble(textx);
+                totalDrAmount = totalDrAmount + valueDup;
+                
+                double value1Dup = Double.parseDouble(texty);
+                totalCrAmount = totalCrAmount + value1Dup;
                 table6cell7 = new PdfPCell(new Paragraph(textx, font3));
                 table6cell7.setBorderColor(BaseColor.BLACK);
                 table6cell7.setBackgroundColor(BaseColor.WHITE);
@@ -735,13 +903,8 @@ public class DepositManager {
 //            table6cell7.setBorder(Rectangle.NO_BORDER);
                 table6cell7.setPaddingTop(15f);
                 table6cell7.setPaddingLeft(2f);
-
-                String text1 = merged.get(i).getCrAmount();
-                double value1 = Double.parseDouble(text1);
-                String texty = roundTwoDecimalPoints(value1);
-                totalCrAmount = totalCrAmount + value1;
-
-                PdfPCell table6cell8 = new PdfPCell(new Paragraph(texty, font3));
+                
+                table6cell8 = new PdfPCell(new Paragraph(texty, font3));
                 table6cell8.setBorderColor(BaseColor.BLACK);
                 table6cell8.setBackgroundColor(BaseColor.WHITE);
                 table6cell8.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -749,8 +912,9 @@ public class DepositManager {
 //            table6cell8.setBorder(Rectangle.NO_BORDER);
                 table6cell8.setPaddingTop(15f);
                 table6cell8.setPaddingLeft(2f);
-
-                cbl = roundTwoDecimals(openingBalance + value1 - value);
+                if((merged.get(i).getGroupName()).equalsIgnoreCase("Deposit Group")){
+                cbl = roundTwoDecimals(openingBalance - value1 + value);
+                }
                 openingBalance = roundTwoDecimals(cbl);
                 cbl1 = roundTwoDecimalPoints(cbl);
 

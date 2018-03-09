@@ -15,6 +15,7 @@ import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.List;
 import javax.servlet.ServletException;
@@ -23,8 +24,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import com.accure.user.dto.User;
-import com.accure.user.manager.UserManager;
 import org.apache.log4j.Logger;
 
 /**
@@ -58,35 +57,38 @@ public class HeadwiseIncomeBudgetSaveService extends HttpServlet {
 //                User currentUser = (User) session.getAttribute("user");
 //                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
 //                if (authorized) {
+                String dept = request.getParameter("department");
+                Type type1 = new TypeToken<List<String>>() {
+                }.getType();
+                List<String> deptList = new Gson().fromJson(dept, type1);
+                String searchObj = request.getParameter("objJson");
+                // String sanction = request.getParameter("employeeDetails");
+                String loginUserId = request.getParameter("userid");
+                List<HeadwiseIncomeBudget> list = new Gson().fromJson(searchObj, new TypeToken<List<HeadwiseIncomeBudget>>() {
+                }.getType());
+                int count = list.size();
+                int resultCount = 0;
 
-                    String searchObj = request.getParameter("objJson");
-                    // String sanction = request.getParameter("employeeDetails");
-                    String loginUserId = request.getParameter("userid");
-                    List<HeadwiseIncomeBudget> list = new Gson().fromJson(searchObj, new TypeToken<List<HeadwiseIncomeBudget>>() {
-                    }.getType());
-                    int count = list.size();
-                    int resultCount = 0;
+                for (Iterator<HeadwiseIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
+                    HeadwiseIncomeBudget next = iterator.next();
+                    if (new SearchBudgetHeadManager().save(next, loginUserId,deptList) != "") {
+                        resultCount++;
+                    }
+                }
 
-                    for (Iterator<HeadwiseIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
-                        HeadwiseIncomeBudget next = iterator.next();
-                        if (new SearchBudgetHeadManager().save(next, loginUserId) != "") {
-                            resultCount++;
-                        }
-                    }
-
-                    String result = "false";
-                    if (resultCount == count) {
-                        result = "true";
-                    }
-                    if (result != null && !result.isEmpty()) {
-                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
-                        out.write(new Gson().toJson(result));
-                        logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
-                    } else {
-                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
-                        out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
-                        logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
-                    }
+                String result = "false";
+                if (resultCount == count) {
+                    result = "true";
+                }
+                if (result != null && !result.isEmpty()) {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
+                    out.write(new Gson().toJson(result));
+                    logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
+                } else {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
+                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
+                    logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
+                }
 //                } else {
 //                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
 //                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));

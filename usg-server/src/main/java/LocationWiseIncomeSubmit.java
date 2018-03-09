@@ -15,6 +15,7 @@ import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.List;
 import javax.servlet.ServletException;
@@ -30,8 +31,7 @@ import org.apache.log4j.Logger;
  */
 public class LocationWiseIncomeSubmit extends HttpServlet {
 
-     Logger logger = Logger.getLogger(LocationWiseIncomeSubmit.class);
- 
+    Logger logger = Logger.getLogger(LocationWiseIncomeSubmit.class);
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -52,40 +52,44 @@ public class LocationWiseIncomeSubmit extends HttpServlet {
             if (SessionManager.checkUserSession(session)) {
 
                 User currentUser = (User) session.getAttribute("user");
-                    String objJson = request.getParameter("objJson");
-                    String loginUserId = request.getParameter("userid");
-                    //
-                    List<HeadwiseIncomeBudget> list = new Gson().fromJson(objJson, new TypeToken<List<HeadwiseIncomeBudget>>() {
-                    }.getType());
-                    int count = list.size();
-                    int resultCount = 0;
-                    for (Iterator<HeadwiseIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
-                        HeadwiseIncomeBudget next = iterator.next();
-                        String id = next.getIncomeBudgetId();
-                        if (new SearchBudgetHeadManager().SubmitData(id, loginUserId)) {
-                            resultCount++;
-                        }
+                String objJson = request.getParameter("objJson");
+                String loginUserId = request.getParameter("userid");
+                String dept = request.getParameter("department");
+                Type type1 = new TypeToken<List<String>>() {
+                }.getType();
+                List<String> deptList = new Gson().fromJson(dept, type1);
+                //
+                List<HeadwiseIncomeBudget> list = new Gson().fromJson(objJson, new TypeToken<List<HeadwiseIncomeBudget>>() {
+                }.getType());
+                int count = list.size();
+                int resultCount = 0;
+                for (Iterator<HeadwiseIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
+                    HeadwiseIncomeBudget next = iterator.next();
+                    String id = next.getIncomeBudgetId();
+                    if (new SearchBudgetHeadManager().SubmitData(id, loginUserId,deptList)) {
+                        resultCount++;
                     }
-                    String result = "false";
-                    if (resultCount == count) {
-                        result = "true";
-                    }
+                }
+                String result = "false";
+                if (resultCount == count) {
+                    result = "true";
+                }
 //
 
 //                Type type = new TypeToken<ConsolidateExpenseBudget>() {
 //                }.getType();
 //                ConsolidateIncomeBudget fc = new Gson().fromJson(objJson, type);
 //                String result = new ConsolidateIncomeBudgetManager().save(fc, loginUserId);
-                    if (result != null && !result.isEmpty()) {
-                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
-                        out.write(new Gson().toJson(result));
-                        logger.info(Common.getLogMsg("LocationWiseIncomeSubmit", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
-                    } else {
-                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
-                        out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
-                        logger.info(Common.getLogMsg("LocationWiseIncomeSubmit", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
-                    }
-            
+                if (result != null && !result.isEmpty()) {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
+                    out.write(new Gson().toJson(result));
+                    logger.info(Common.getLogMsg("LocationWiseIncomeSubmit", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
+                } else {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
+                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
+                    logger.info(Common.getLogMsg("LocationWiseIncomeSubmit", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
+                }
+
             } else {
                 request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
                 out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));

@@ -49,6 +49,9 @@ public class LedgerAsPerBudgetService extends HttpServlet {
                 if (resultJson != null && !resultJson.isEmpty()) {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
                     out.write(new Gson().toJson(resultJson));
+                } else if (resultJson == null) {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_NODATA);
+                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_NODATA));
                 } else {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
                     out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));

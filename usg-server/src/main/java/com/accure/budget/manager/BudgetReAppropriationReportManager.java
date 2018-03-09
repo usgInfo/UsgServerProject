@@ -5,12 +5,8 @@
  */
 package com.accure.budget.manager;
 
-import com.accure.budget.dto.BudgetAtAGlance;
-import com.accure.budget.dto.CreateBudgetExpense;
-import com.accure.budget.dto.ExpenseBudgetApproval;
-import com.accure.budget.dto.FinancialYear;
+import com.accure.budget.dto.DeptWiseExpBudgetAllocation;
 import com.accure.finance.manager.ChangeFinancialYearManager;
-import com.accure.hrms.dto.FundHeadMapping;
 import com.accure.usg.common.manager.DBManager;
 import com.accure.usg.server.utils.ApplicationConstants;
 import com.google.gson.Gson;
@@ -39,23 +35,21 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import static org.apache.poi.hssf.usermodel.HSSFShapeTypes.RoundRectangle;
 
 /**
  *
  * @author user
  */
-public class BudgetReAppropriationReportManager 
-{
-    public ByteArrayOutputStream generateBudgetReport(List<ExpenseBudgetApproval> budgetAtGlanceList,String path,String finYear)throws DocumentException, FileNotFoundException, Exception {
+public class BudgetReAppropriationReportManager {
 
-       Document document = new Document();
+    public ByteArrayOutputStream generateBudgetReport(List<DeptWiseExpBudgetAllocation> budgetAtGlanceList, String path, String finYear) throws DocumentException, FileNotFoundException, Exception {
+
+        Document document = new Document();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         PdfWriter.getInstance(document, bos);
         document.open();
 
         //String formulJson = new com.accure.hrms.manager.FundHeadMappingManager().viewFHMList();
-
         PdfPTable outerTable = new PdfPTable(1);
         outerTable.setWidthPercentage(100);
 
@@ -127,7 +121,7 @@ public class BudgetReAppropriationReportManager
         header.addCell(timecell);
         outercell.addElement(header);
 
-        float[] eightcolumn = {1f, 2f, 2f,2f,2f};
+        float[] eightcolumn = {1f, 2f, 2f, 2f, 2f};
 
         //Heads
         PdfPTable table3 = new PdfPTable(5); // 3 columns.
@@ -149,13 +143,13 @@ public class BudgetReAppropriationReportManager
         table3cellc.setHorizontalAlignment(Element.ALIGN_CENTER);
         table3cellc.setPaddingBottom(5);
         table3cellc.setPaddingTop(5);
-        
-         PdfPCell table3celld = new PdfPCell(new Paragraph("ReAppropriation Amount", FontFactory.getFont(FontFactory.TIMES_ROMAN, 12, Font.BOLD, BaseColor.BLACK)));
+
+        PdfPCell table3celld = new PdfPCell(new Paragraph("ReAppropriation Amount", FontFactory.getFont(FontFactory.TIMES_ROMAN, 12, Font.BOLD, BaseColor.BLACK)));
         table3celld.setHorizontalAlignment(Element.ALIGN_CENTER);
         table3celld.setPaddingBottom(5);
         table3celld.setPaddingTop(5);
-        
-         PdfPCell table3celle = new PdfPCell(new Paragraph("Amount After ReAppropriation", FontFactory.getFont(FontFactory.TIMES_ROMAN, 12, Font.BOLD, BaseColor.BLACK)));
+
+        PdfPCell table3celle = new PdfPCell(new Paragraph("Amount After ReAppropriation", FontFactory.getFont(FontFactory.TIMES_ROMAN, 12, Font.BOLD, BaseColor.BLACK)));
         table3celle.setHorizontalAlignment(Element.ALIGN_CENTER);
         table3celle.setPaddingBottom(5);
         table3celle.setPaddingTop(5);
@@ -170,53 +164,58 @@ public class BudgetReAppropriationReportManager
 
 //        List<FundHeadMapping> formulalist = new Gson().fromJson(formulJson, new TypeToken<List<FundHeadMapping>>() {
 //        }.getType());
-        if(budgetAtGlanceList.size()!=0)
-        {
-        for (ExpenseBudgetApproval key : budgetAtGlanceList) {
-            //PDF Document
-            String ledgerName = key.getLedgerName();
-            double sanctionedAmount = Double.parseDouble(key.getSanctionedAmount());
-            String appropriationValueStr=key.getAppropriationValue();
-          if(appropriationValueStr.contains("-"))
-            {
-            double reapproprationvalue =Double.parseDouble(key.getAppropriationValue());
-            double amountaftrReapro=sanctionedAmount+reapproprationvalue;
+        if (budgetAtGlanceList.size() != 0) {
+            for (DeptWiseExpBudgetAllocation key : budgetAtGlanceList) {
+                //PDF Document
+                String ledgerName = key.getLedgerName();
+                double sanctionedAmount = Double.parseDouble(key.getSanctionedAmount());
+                try {
+                    sanctionedAmount = sanctionedAmount + Double.parseDouble(key.getExtraProvisionAmount());
+                } catch (Exception ex) {
+
+                }
+                String appropriationValueStr = key.getAppropriationValue();
+                if (appropriationValueStr != null) {
+                    if (appropriationValueStr.contains("-")) {
+                        double reapproprationvalue = Double.parseDouble(key.getAppropriationValue());
+                        double amountaftrReapro = sanctionedAmount + reapproprationvalue;
 ////
-            String SerNo = Integer.toString(sNo);
+                        String SerNo = Integer.toString(sNo);
 //
-            PdfPCell table5cell1 = new PdfPCell(new Paragraph(SerNo, FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            table5cell1.setHorizontalAlignment(Element.ALIGN_CENTER);
-            table5cell1.setPaddingBottom(5);
-            table5cell1.setPaddingTop(5);
+                        PdfPCell table5cell1 = new PdfPCell(new Paragraph(SerNo, FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        table5cell1.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        table5cell1.setPaddingBottom(5);
+                        table5cell1.setPaddingTop(5);
 
-            PdfPCell cell2 = new PdfPCell(new Paragraph(ledgerName, FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            cell2.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cell2.setPaddingBottom(5);
-            cell2.setPaddingTop(5);
+                        PdfPCell cell2 = new PdfPCell(new Paragraph(ledgerName, FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        cell2.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        cell2.setPaddingBottom(5);
+                        cell2.setPaddingTop(5);
 
-            PdfPCell cell3 = new PdfPCell(new Paragraph(String.valueOf(sanctionedAmount), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            cell3.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cell3.setPaddingBottom(5);
-            cell3.setPaddingTop(5);
-            
-            PdfPCell cell4 = new PdfPCell(new Paragraph(String.valueOf(reapproprationvalue), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            cell4.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cell4.setPaddingBottom(5);
-            cell4.setPaddingTop(5);
-            
-            PdfPCell cell5 = new PdfPCell(new Paragraph(String.valueOf(amountaftrReapro), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            cell5.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cell5.setPaddingBottom(5);
-            cell5.setPaddingTop(5);
+                        PdfPCell cell3 = new PdfPCell(new Paragraph(String.valueOf(sanctionedAmount), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        cell3.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        cell3.setPaddingBottom(5);
+                        cell3.setPaddingTop(5);
 
-            table3.addCell(table5cell1);
-            table3.addCell(cell2);
-            table3.addCell(cell3);
-            table3.addCell(cell4);
-            table3.addCell(cell5);
-            sNo++;
+                        PdfPCell cell4 = new PdfPCell(new Paragraph(String.valueOf(reapproprationvalue), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        cell4.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        cell4.setPaddingBottom(5);
+                        cell4.setPaddingTop(5);
+
+                        PdfPCell cell5 = new PdfPCell(new Paragraph(String.valueOf(amountaftrReapro), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        cell5.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        cell5.setPaddingBottom(5);
+                        cell5.setPaddingTop(5);
+
+                        table3.addCell(table5cell1);
+                        table3.addCell(cell2);
+                        table3.addCell(cell3);
+                        table3.addCell(cell4);
+                        table3.addCell(cell5);
+                        sNo++;
+                    }
+                }
             }
-        }
         }
         outercell.addElement(table3);
         RoundRectangle roundRectangle = new RoundRectangle();
@@ -224,7 +223,7 @@ public class BudgetReAppropriationReportManager
         outercell.setBorder(Rectangle.NO_BORDER);
         outercell.setBorderWidth(2);
         outercell.setPadding(8);
-         //Heads
+        //Heads
         PdfPTable table4 = new PdfPTable(5); // 3 columns.
         table4.setWidthPercentage(100); //Width 100%
         table4.setWidths(eightcolumn);
@@ -244,13 +243,13 @@ public class BudgetReAppropriationReportManager
         table4cellc.setHorizontalAlignment(Element.ALIGN_CENTER);
         table4cellc.setPaddingBottom(5);
         table4cellc.setPaddingTop(5);
-        
-         PdfPCell table4celld = new PdfPCell(new Paragraph("ReAppropriation Amount", FontFactory.getFont(FontFactory.TIMES_ROMAN, 12, Font.BOLD, BaseColor.BLACK)));
+
+        PdfPCell table4celld = new PdfPCell(new Paragraph("ReAppropriation Amount", FontFactory.getFont(FontFactory.TIMES_ROMAN, 12, Font.BOLD, BaseColor.BLACK)));
         table4celld.setHorizontalAlignment(Element.ALIGN_CENTER);
         table4celld.setPaddingBottom(5);
         table4celld.setPaddingTop(5);
-        
-         PdfPCell table4celle = new PdfPCell(new Paragraph("Amount After ReAppropriation", FontFactory.getFont(FontFactory.TIMES_ROMAN, 12, Font.BOLD, BaseColor.BLACK)));
+
+        PdfPCell table4celle = new PdfPCell(new Paragraph("Amount After ReAppropriation", FontFactory.getFont(FontFactory.TIMES_ROMAN, 12, Font.BOLD, BaseColor.BLACK)));
         table4celle.setHorizontalAlignment(Element.ALIGN_CENTER);
         table4celle.setPaddingBottom(5);
         table4celle.setPaddingTop(5);
@@ -261,60 +260,64 @@ public class BudgetReAppropriationReportManager
         table4.addCell(table4celld);
         table4.addCell(table4celle);
 
-         sNo = 1;
+        sNo = 1;
 
 //        List<FundHeadMapping> formulalist = new Gson().fromJson(formulJson, new TypeToken<List<FundHeadMapping>>() {
 //        }.getType());
-        if(budgetAtGlanceList.size()!=0)
-        {
-        for (ExpenseBudgetApproval key : budgetAtGlanceList) {
-            //PDF Document
-            String ledgerName = key.getLedgerName();
-            double sanctionedAmount = Double.parseDouble(key.getSanctionedAmount());
-          String appropriationValueStr=key.getAppropriationValue();
-          if(!appropriationValueStr.contains("-"))
-            {
-            double reapproprationvalue =Double.parseDouble(key.getAppropriationValue());
-            double amountaftrReapro=sanctionedAmount+reapproprationvalue;
+        if (budgetAtGlanceList.size() != 0) {
+            for (DeptWiseExpBudgetAllocation key : budgetAtGlanceList) {
+                //PDF Document
+                String ledgerName = key.getLedgerName();
+                double sanctionedAmount = Double.parseDouble(key.getSanctionedAmount());
+                try {
+                    sanctionedAmount = sanctionedAmount + Double.parseDouble(key.getExtraProvisionAmount());
+                } catch (Exception ex) {
+
+                }
+                String appropriationValueStr = key.getAppropriationValue();
+                if (appropriationValueStr != null) {
+                    if (!appropriationValueStr.contains("-")) {
+                        double reapproprationvalue = Double.parseDouble(key.getAppropriationValue());
+                        double amountaftrReapro = sanctionedAmount + reapproprationvalue;
 ////
-            String SerNo = Integer.toString(sNo);
+                        String SerNo = Integer.toString(sNo);
 //
-            PdfPCell table5cella = new PdfPCell(new Paragraph(SerNo, FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            table5cella.setHorizontalAlignment(Element.ALIGN_CENTER);
-            table5cella.setPaddingBottom(5);
-            table5cella.setPaddingTop(5);
+                        PdfPCell table5cella = new PdfPCell(new Paragraph(SerNo, FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        table5cella.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        table5cella.setPaddingBottom(5);
+                        table5cella.setPaddingTop(5);
 
-            PdfPCell cellb = new PdfPCell(new Paragraph(ledgerName, FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            cellb.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cellb.setPaddingBottom(5);
-            cellb.setPaddingTop(5);
+                        PdfPCell cellb = new PdfPCell(new Paragraph(ledgerName, FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        cellb.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        cellb.setPaddingBottom(5);
+                        cellb.setPaddingTop(5);
 
-            PdfPCell cellc = new PdfPCell(new Paragraph(String.valueOf(sanctionedAmount), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            cellc.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cellc.setPaddingBottom(5);
-            cellc.setPaddingTop(5);
-            
-            PdfPCell celld = new PdfPCell(new Paragraph(String.valueOf(reapproprationvalue), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            celld.setHorizontalAlignment(Element.ALIGN_CENTER);
-            celld.setPaddingBottom(5);
-            celld.setPaddingTop(5);
-            
-            PdfPCell celle = new PdfPCell(new Paragraph(String.valueOf(amountaftrReapro), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
-            celle.setHorizontalAlignment(Element.ALIGN_CENTER);
-            celle.setPaddingBottom(5);
-            celle.setPaddingTop(5);
+                        PdfPCell cellc = new PdfPCell(new Paragraph(String.valueOf(sanctionedAmount), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        cellc.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        cellc.setPaddingBottom(5);
+                        cellc.setPaddingTop(5);
 
-            table4.addCell(table5cella);
-            table4.addCell(cellb);
-            table4.addCell(cellc);
-            table4.addCell(celld);
-            table4.addCell(celle);
-            sNo++;
+                        PdfPCell celld = new PdfPCell(new Paragraph(String.valueOf(reapproprationvalue), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        celld.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        celld.setPaddingBottom(5);
+                        celld.setPaddingTop(5);
+
+                        PdfPCell celle = new PdfPCell(new Paragraph(String.valueOf(amountaftrReapro), FontFactory.getFont(FontFactory.TIMES_ROMAN, 11, Font.NORMAL, BaseColor.BLACK)));
+                        celle.setHorizontalAlignment(Element.ALIGN_CENTER);
+                        celle.setPaddingBottom(5);
+                        celle.setPaddingTop(5);
+
+                        table4.addCell(table5cella);
+                        table4.addCell(cellb);
+                        table4.addCell(cellc);
+                        table4.addCell(celld);
+                        table4.addCell(celle);
+                        sNo++;
+                    }
+                }
             }
         }
-        }
-        
-        
+
         outercell.addElement(table4);
         RoundRectangle roundRectangle1 = new RoundRectangle();
         outercell.setCellEvent(roundRectangle1);
@@ -322,14 +325,15 @@ public class BudgetReAppropriationReportManager
         outercell.setBorderWidth(2);
         outercell.setPadding(8);
         outerTable.addCell(outercell);
-       // outerTable.addCell(outercell2);
+        // outerTable.addCell(outercell2);
         document.add(outerTable);
         document.close();
         return bos;
     }
-    
-     public List<ExpenseBudgetApproval> generateReApropriationBudgetReport(String obj1) throws Exception {
-         ExpenseBudgetApproval obj= new Gson().fromJson(obj1, new TypeToken<ExpenseBudgetApproval>() { }.getType()); 
+
+    public List<DeptWiseExpBudgetAllocation> generateReApropriationBudgetReport(String obj1) throws Exception {
+        DeptWiseExpBudgetAllocation obj = new Gson().fromJson(obj1, new TypeToken<DeptWiseExpBudgetAllocation>() {
+        }.getType());
         HashMap<String, String> conditionMap = new HashMap<String, String>();
         conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
         if (obj.getBudgetType().isEmpty() == false) {
@@ -347,37 +351,35 @@ public class BudgetReAppropriationReportManager
         if (obj.getDdo().isEmpty() == false) {
             conditionMap.put("ddo", obj.getDdo());
         }
-        if (obj.getBudgetHead().isEmpty() == false) 
-         {
+        if (obj.getBudgetHead().isEmpty() == false) {
             conditionMap.put("budgetHead", obj.getBudgetHead());
-         }
-        if (obj.getLocation().isEmpty() == false) 
-         {
+        }
+        if (obj.getLocation().isEmpty() == false) {
             conditionMap.put("location", obj.getLocation());
-         }
+        }
         String result1 = "";
-       // conditionMap.put("isSanctioned", "true");
+        // conditionMap.put("isSanctioned", "true");
         //System.out.println("-------conditionMap----"+conditionMap.toString());
-        String result = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.EXPENSE_BUDGET_APPROVAL, conditionMap);
-        if(result!=null)
-        {
-        List<ExpenseBudgetApproval> list = new Gson().fromJson(result, new TypeToken<List<ExpenseBudgetApproval>>() {
-        }.getType());
-        
-        //list = getBudgetHeadAndDescription(list);
-        return list;
+        String result = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.DEPTWISE_EXP_BUDGET_ALLOC_TABLE, conditionMap);
+        if (result != null) {
+            List<DeptWiseExpBudgetAllocation> list = new Gson().fromJson(result, new TypeToken<List<DeptWiseExpBudgetAllocation>>() {
+            }.getType());
+
+            //list = getBudgetHeadAndDescription(list);
+            return list;
         }
         return null;
     }
 }
+
 class RoundRectangle implements PdfPCellEvent {
 
-        public void cellLayout(PdfPCell cell, Rectangle rect,
-                PdfContentByte[] canvas) {
-            PdfContentByte cb = canvas[PdfPTable.LINECANVAS];
-            cb.roundRectangle(
-                    rect.getLeft() + 1.5f, rect.getBottom() + 1.5f, rect.getWidth() - 3,
-                    rect.getHeight() - 3, 4);
-            cb.stroke();
-        }
+    public void cellLayout(PdfPCell cell, Rectangle rect,
+            PdfContentByte[] canvas) {
+        PdfContentByte cb = canvas[PdfPTable.LINECANVAS];
+        cb.roundRectangle(
+                rect.getLeft() + 1.5f, rect.getBottom() + 1.5f, rect.getWidth() - 3,
+                rect.getHeight() - 3, 4);
+        cb.stroke();
     }
+}

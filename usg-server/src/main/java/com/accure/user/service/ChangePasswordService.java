@@ -5,7 +5,6 @@
  */
 package com.accure.user.service;
 
-import com.accure.accure.security.Security;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.SessionManager;
@@ -47,7 +46,7 @@ public class ChangePasswordService extends HttpServlet {
                 Type type = new TypeToken<User>() {
                 }.getType();
 
-                String data = "OldPassword-" + Security.encryptPassword(userOldPasswd) + ":" + "NewPassword-" + Security.encryptPassword(userNewPasswd) + ":" + "User DTO-" + new Gson().toJson(user, type);
+                String data = "OldPassword-" + userOldPasswd + ":" + "NewPassword-" + userNewPasswd + ":" + "User DTO-" + new Gson().toJson(user, type);
 
                 // Application level logging
 //            logger.info(Common.getLogMsg((String) user.getId(), ((Map<String, String>) (user.getId())).get("$oid"), new Gson().toJson(data), ApplicationConstants.PASSWORD_UPDATE, request.getRemoteAddr()));

@@ -24,6 +24,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.log4j.Logger;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
+import java.lang.reflect.Type;
 
 /**
  *
@@ -51,9 +52,12 @@ public class ExpenseBudgetApprovalSave extends HttpServlet {
                     List<ExpenseBudgetApproval> list = new Gson().fromJson(headlist, new TypeToken<List<ExpenseBudgetApproval>>() {
                     }.getType());
                     String result = null;
-
+                    String dept = request.getParameter("department");
+                    Type type1 = new TypeToken<List<String>>() {
+                    }.getType();
+                    List<String> deptList = new Gson().fromJson(dept, type1);
                     for (ExpenseBudgetApproval cl : list) {
-                        result = new ExpenseBudgetApprovalManager().save(cl, userid);
+                        result = new ExpenseBudgetApprovalManager().save(cl, userid, deptList);
 
                     }
 

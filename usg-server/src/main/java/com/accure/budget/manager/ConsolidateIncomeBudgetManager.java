@@ -66,7 +66,7 @@ public class ConsolidateIncomeBudgetManager {
         return null;
     }
 
-    public String getsrNos(ConsolidateIncomeBudget consolidateIncomeBudget) throws Exception {
+    public String getsrNos(ConsolidateIncomeBudget consolidateIncomeBudget, List deptData) throws Exception {
         String finYear = consolidateIncomeBudget.getFinancialYear();
         String budgetType = consolidateIncomeBudget.getBudgetType();
         String fundType = consolidateIncomeBudget.getFundType();
@@ -129,8 +129,8 @@ public class ConsolidateIncomeBudgetManager {
         if (Id == null || Id.isEmpty()) {
             return false;
         }
-        User user = new UserManager().fetch(loginUserId);
-        String userName = user.getFname() + " " + user.getLname();
+//        User user = new UserManager().fetch(loginUserId);
+//        String userName = user.getFname() + " " + user.getLname();
 
         Type type = new TypeToken<ConsolidateIncomeBudget>() {
         }.getType();
@@ -139,10 +139,28 @@ public class ConsolidateIncomeBudgetManager {
             return false;
         }
         ConsolidateIncomeBudget consolidateExpenseBudgetrJson = new Gson().fromJson(consolidateExpenseBudget, type);
+
+        ArrayList<String> li = (ArrayList<String>) consolidateExpenseBudgetrJson.getIncomeBudgetIdList();
+        for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
+            String next1 = iterator1.next();
+            new ConsolidateIncomeBudgetManager().updateIsConsolidateFlagOfFalseConsolidate(next1);
+        }
         consolidateExpenseBudgetrJson.setStatus(ApplicationConstants.INACTIVE);
         consolidateExpenseBudgetrJson.setConsolidateBudgetStatus(ApplicationConstants.DELETED);
-        consolidateExpenseBudgetrJson.setUpdatedBy(userName);
+//        consolidateExpenseBudgetrJson.setUpdatedBy(userName);
         boolean result = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_INCOME_BUDGET, Id, new Gson().toJson(consolidateExpenseBudgetrJson));
+        return result;
+    }
+
+    public boolean updateIsConsolidateFlagOfFalseConsolidate(String id) throws Exception {
+
+        String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.CONSOLIDATE_DEPT_INCOME, id);
+        List<ConsolidateDepartmentIncome> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<ConsolidateDepartmentIncome>>() {
+        }.getType());
+        ConsolidateDepartmentIncome obj = incomeBudgetList.get(0);
+        obj.setIsConsolidated("false");
+//        obj.setUpdatedBy(userName);
+        boolean result = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_DEPT_INCOME, id, new Gson().toJson(obj));
         return result;
     }
 
@@ -271,24 +289,26 @@ public class ConsolidateIncomeBudgetManager {
                 }
                 //System.out.println("Before If Loop" + flag);
                 if (flag == null || flag.equalsIgnoreCase("false")) {
-                    //System.out.println("After If Loop");
-                    if (map.get(next.getLedgerId()) == null) {
-                        map.put(next.getLedgerId(), Integer.parseInt(next.getAskedForAmount()));
-                        budgetmap.put(next.getLedgerId(), next.getBudgetHead());
-                        try {
-                            BudgetHeadIncomeBudgetIdmap = addBudgetCodeIncomeBudgetId(BudgetHeadIncomeBudgetIdmap, next);
-                        } catch (Exception e) {
-                            //System.out.println("Exception" + e);
+                    if (!next.getAskedForAmount().equalsIgnoreCase("0")) {
+                        //System.out.println("After If Loop");
+                        if (map.get(next.getLedgerId()) == null) {
+                            map.put(next.getLedgerId(), Integer.parseInt(next.getAskedForAmount()));
+                            budgetmap.put(next.getLedgerId(), next.getBudgetHead());
+                            try {
+                                BudgetHeadIncomeBudgetIdmap = addBudgetCodeIncomeBudgetId(BudgetHeadIncomeBudgetIdmap, next);
+                            } catch (Exception e) {
+                                //System.out.println("Exception" + e);
+                            }
+                        } else {
+                            int total = map.get(next.getLedgerId());
+                            total = total + Integer.parseInt(next.getAskedForAmount());
+                            try {
+                                BudgetHeadIncomeBudgetIdmap = addBudgetCodeIncomeBudgetId(BudgetHeadIncomeBudgetIdmap, next);
+                            } catch (Exception e) {
+                                //System.out.println("Exception" + e);
+                            }
+                            map.put(next.getLedgerId(), total);
                         }
-                    } else {
-                        int total = map.get(next.getLedgerId());
-                        total = total + Integer.parseInt(next.getAskedForAmount());
-                        try {
-                            BudgetHeadIncomeBudgetIdmap = addBudgetCodeIncomeBudgetId(BudgetHeadIncomeBudgetIdmap, next);
-                        } catch (Exception e) {
-                            //System.out.println("Exception" + e);
-                        }
-                        map.put(next.getLedgerId(), total);
                     }
                 } else if (flag.equalsIgnoreCase("true")) {
                     //System.out.println("Fals is true");
@@ -701,10 +721,10 @@ public class ConsolidateIncomeBudgetManager {
         return incomebudgetHeadList;
     }
 
-    public String fetchAllBasedOnFinancialYear(String year, String fundType, String sector, String budgetHead) throws Exception {
+    public String fetchAllBasedOnFinancialYear(String year, String fundType, String sector, String budgetType) throws Exception {
         HashMap<String, String> conditionMap = new HashMap<String, String>();
         conditionMap.put("financialYear", year);
-        conditionMap.put("budgetHead", budgetHead);
+        conditionMap.put("budgetType", budgetType);
         conditionMap.put("fundType", fundType);
         conditionMap.put("sector", sector);
         conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
@@ -715,8 +735,8 @@ public class ConsolidateIncomeBudgetManager {
         return result1;
     }
 
-    public String getSlNumber(String year, String fundType, String sector, String budgetHead) throws Exception {
-        String result = new ConsolidateIncomeBudgetManager().fetchAllBasedOnFinancialYear(year, fundType, sector, budgetHead);
+    public String getSlNumber(String year, String fundType, String sector, String budgetType) throws Exception {
+        String result = new ConsolidateIncomeBudgetManager().fetchAllBasedOnFinancialYear(year, fundType, sector, budgetType);
         List<ConsolidateIncomeBudget> loanApplyList = new Gson().fromJson(result, new TypeToken<List<ConsolidateIncomeBudget>>() {
         }.getType());
 

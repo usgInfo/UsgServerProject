@@ -11,16 +11,21 @@ import com.accure.usg.common.dto.Common;
  *
  * @author user
  */
-public class PreviousBudgetAmountDetails extends Common{
+public class PreviousBudgetAmountDetails extends Common {
 
     private String ddo;
     private String location;
     private String fundType;
     private String budgetHead;
     private String budgetType;
-    private long actualAmount;
+    private String actualAmount;
     private String sector;
     private String financialYear;
+    private String ledger;
+    private String ledgerId;
+    private String budgetHeadName;
+    private String department;
+    private String budgetNature;
 
     public String getDdo() {
         return ddo;
@@ -62,14 +67,6 @@ public class PreviousBudgetAmountDetails extends Common{
         this.budgetType = budgetType;
     }
 
-    public long getActualAmount() {
-        return actualAmount;
-    }
-
-    public void setActualAmount(long actualAmount) {
-        this.actualAmount = actualAmount;
-    }
-
     public String getSector() {
         return sector;
     }
@@ -85,8 +82,53 @@ public class PreviousBudgetAmountDetails extends Common{
     public void setFinancialYear(String financialYear) {
         this.financialYear = financialYear;
     }
-    
-    
-    
+
+    public String getLedger() {
+        return ledger;
+    }
+
+    public void setLedger(String ledger) {
+        this.ledger = ledger;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public String getActualAmount() {
+        return actualAmount;
+    }
+
+    public void setActualAmount(String actualAmount) {
+        this.actualAmount = actualAmount;
+    }
+
+    public String getLedgerId() {
+        return ledgerId;
+    }
+
+    public void setLedgerId(String ledgerId) {
+        this.ledgerId = ledgerId;
+    }
+
+    public String getBudgetHeadName() {
+        return budgetHeadName;
+    }
+
+    public void setBudgetHeadName(String budgetHeadName) {
+        this.budgetHeadName = budgetHeadName;
+    }
+
+    public String getBudgetNature() {
+        return budgetNature;
+    }
+
+    public void setBudgetNature(String budgetNature) {
+        this.budgetNature = budgetNature;
+    }
 
 }

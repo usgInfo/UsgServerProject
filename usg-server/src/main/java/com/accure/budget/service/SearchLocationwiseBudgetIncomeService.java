@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -41,10 +42,14 @@ public class SearchLocationwiseBudgetIncomeService extends HttpServlet {
             if (SessionManager.checkUserSession(session)) {
 
                 String searchObj = request.getParameter("searchObj");
+                String dept = request.getParameter("department");
+                Type type1 = new TypeToken<List<String>>() {
+                }.getType();
+                List<String> deptList = new Gson().fromJson(dept, type1);
                 Type type = new TypeToken<HeadwiseIncomeBudget>() {
                 }.getType();
                 HeadwiseIncomeBudget fc = new Gson().fromJson(searchObj, type);
-                String result = new SearchBudgetHeadManager().search(fc);
+                String result = new SearchBudgetHeadManager().search(fc, deptList);
 
                 if (result != null && !result.isEmpty()) {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);

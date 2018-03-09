@@ -11,6 +11,8 @@ import com.accure.budget.dto.ConsolidateIncomeBudget;
 import com.accure.budget.dto.CreateIncomeBudget;
 import com.accure.budget.dto.HeadwiseIncomeBudget;
 import static com.accure.budget.manager.ConsolidateIncomeBudgetManager.SUBMIT;
+import com.accure.hrms.dto.BudgetHeadMaster;
+import com.accure.hrms.manager.BudgetHeadMappingManager;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.DBManager;
@@ -39,7 +41,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
  */
 public class SearchBudgetHeadManager {
 
-    public String search(HeadwiseIncomeBudget emp) throws Exception {
+    public String search(HeadwiseIncomeBudget emp, List deptData) throws Exception {
 
         PropertiesConfiguration config = getConfig();
         BasicDBObject regexQuery = new BasicDBObject();
@@ -90,11 +92,24 @@ public class SearchBudgetHeadManager {
         List<HeadwiseIncomeBudget> finalList = new ArrayList<HeadwiseIncomeBudget>();
 
         while (cursor2.hasNext()) {
+            String process = "stop";
             DBObject ob = cursor2.next();
             Type type = new TypeToken<HeadwiseIncomeBudget>() {
             }.getType();
             HeadwiseIncomeBudget em = new Gson().fromJson(ob.toString(), type);
-            finalList.add(em);
+            List<String> headwiseDeptLis = em.getDepartments();
+            for (int i = 0; i < headwiseDeptLis.size(); i++) {
+                for (int j = 0; j < deptData.size(); j++) {
+                    if (headwiseDeptLis.get(i).equalsIgnoreCase((String) deptData.get(j))) {
+                        process = "start";
+                    }
+                }
+            }
+            if (process.equalsIgnoreCase("start")) {
+                BudgetHeadMaster bhm = new BudgetHeadMappingManager().fetch(em.getBudgetHead());
+                em.setBudgetHeadName(bhm.getBudgetHead());
+                finalList.add(em);
+            }
         }
 
         return new Gson().toJson(finalList);
@@ -149,23 +164,60 @@ public class SearchBudgetHeadManager {
         return listNew;
     }
 
-    public String save(HeadwiseIncomeBudget next, String loginUserId) throws Exception {
+    public String save(HeadwiseIncomeBudget next, String loginUserId, List deptData) throws Exception {
         User user = new UserManager().fetch(loginUserId);
         String userName = user.getFname() + " " + user.getLname();
         next.setCreateDate(System.currentTimeMillis() + "");
         next.setStatus(ApplicationConstants.ACTIVE);
         next.setCreatedBy(userName);
+        next.setDepartments(deptData);
         String finyear = next.getFinancialYear();
-
+        List<String> li = null;
         String headwiseIncomeJson = new Gson().toJson(next);
         String Id = DBManager.getDbConnection().insert(ApplicationConstants.HEADWISE_INCOME_BUDGET_MASTER, headwiseIncomeJson);
         if (Id != null) {
-            return Id;
+            String result = DBManager.getDbConnection().fetch(ApplicationConstants.CONSOLIDATE_INCOME_BUDGET, next.getConsolidatedIncomeId());
+            if (!result.isEmpty()) {
+                List<ConsolidateIncomeBudget> list = new Gson().fromJson(result, new TypeToken<List<ConsolidateIncomeBudget>>() {
+                }.getType());
+                ConsolidateIncomeBudget em = list.get(0);
+                li = em.getIncomeBudgetIdList();
+                for (int i = 0; i < li.size(); i++) {
+                    String result1 = DBManager.getDbConnection().fetch(ApplicationConstants.CONSOLIDATE_DEPT_INCOME, li.get(i));
+                    if (!result1.isEmpty()) {
+                        List<ConsolidateDepartmentIncome> list1 = new Gson().fromJson(result1, new TypeToken<List<ConsolidateDepartmentIncome>>() {
+                        }.getType());
+                        ConsolidateDepartmentIncome em1 = list1.get(0);
+                        List<String> incomeIds = em1.getIncomeBudgetIdList();
+                        List<String> deptIds = new ArrayList<String>();
+                        String process = "stop";
+                        for (String incomeid : incomeIds) {
+                            String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.CREATE_INCOME_BUDGET_TABLE, incomeid);
+                            List<CreateIncomeBudget> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<CreateIncomeBudget>>() {
+                            }.getType());
+                            CreateIncomeBudget obj1 = incomeBudgetList.get(0);
+                            deptIds.add(obj1.getDepartment());
+                        }
+                        for (int j = 0; j < deptIds.size(); j++) {
+                            if (deptData.contains(deptIds.get(j))) {
+                                process = "start";
+                                break;
+                            }
+                        }
+                        if (process.equalsIgnoreCase("start")) {
+                            em1.setIsSanctioned(ApplicationConstants.IS_SANCTIONED_TRUE);
+                            String IncBudgetJson1 = new Gson().toJson(em1);
+                            boolean Id2 = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_DEPT_INCOME, li.get(i), IncBudgetJson1);
+
+                        }
+                    }
+                }
+            }
         }
         return null;
     }
 
-    public boolean SubmitData(String Id, String loginUserId) throws Exception {
+    public boolean SubmitData(String Id, String loginUserId, List deptData) throws Exception {
         if (Id == null || Id.isEmpty()) {
             return false;
         }
@@ -202,17 +254,35 @@ public class SearchBudgetHeadManager {
         if (li != null) {
             for (int i = 0; i < li.size(); i++) {
                 String result1 = DBManager.getDbConnection().fetch(ApplicationConstants.CONSOLIDATE_DEPT_INCOME, li.get(i));
+
                 if (!result1.isEmpty()) {
                     List<ConsolidateDepartmentIncome> list1 = new Gson().fromJson(result1, new TypeToken<List<ConsolidateDepartmentIncome>>() {
                     }.getType());
                     ConsolidateDepartmentIncome em1 = list1.get(0);
-                    em1.setSanctionedAmount(Integer.toString(sanctnAmount));
-                    em1.setRevisedSanctionedAmount(Integer.toString(sanctnAmount));
-                    em1.setIsSanctioned(ApplicationConstants.IS_SANCTIONED_TRUE);
-                    String IncBudgetJson1 = new Gson().toJson(em1);
-                    boolean Id2 = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_DEPT_INCOME, li.get(i), IncBudgetJson1);
-                    //System.out.println("Id1" + Id2);
-
+                    List<String> incomeIds = em1.getIncomeBudgetIdList();
+                    List<String> deptIds = new ArrayList<String>();
+                    String process = "stop";
+                    for (String incomeid : incomeIds) {
+                        String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.CREATE_INCOME_BUDGET_TABLE, incomeid);
+                        List<CreateIncomeBudget> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<CreateIncomeBudget>>() {
+                        }.getType());
+                        CreateIncomeBudget obj1 = incomeBudgetList.get(0);
+                        deptIds.add(obj1.getDepartment());
+                    }
+                    for (int j = 0; j < deptIds.size(); j++) {
+                        if (deptData.contains(deptIds.get(j))) {
+                            process = "start";
+                            break;
+                        }
+                    }
+                    if (process.equalsIgnoreCase("start")) {
+                        em1.setSanctionedAmount(Integer.toString(sanctnAmount));
+                        em1.setRevisedSanctionedAmount(Integer.toString(sanctnAmount));
+                        em1.setIsSanctioned(ApplicationConstants.IS_SANCTIONED_TRUE);
+                        String IncBudgetJson1 = new Gson().toJson(em1);
+                        boolean Id2 = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_DEPT_INCOME, li.get(i), IncBudgetJson1);
+                        //System.out.println("Id1" + Id2);
+                    }
                 }
             }
         }
@@ -259,7 +329,7 @@ public class SearchBudgetHeadManager {
 
     }
 
-    public String searchBudgetHeads(CreateIncomeBudget dtoData) throws Exception {
+    public String searchBudgetHeads(CreateIncomeBudget dtoData, List deptData) throws Exception {
 
         String result = "no";
         HashMap<String, String> conditionMap = new HashMap<String, String>();
@@ -283,33 +353,65 @@ public class SearchBudgetHeadManager {
         List<String> ledgerIds = new ArrayList<String>();
         List<ConsolidateIncomeBudget> finallist = new ArrayList<ConsolidateIncomeBudget>();
         for (ConsolidateDepartmentIncome cl : ddoList) {
-
-            HashMap<String, String> conexpMap = new HashMap<String, String>();
-            conexpMap.put("ledgerId", cl.getLedgerId());
-            conexpMap.put("status", ApplicationConstants.ACTIVE);
-            String result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CONSOLIDATE_INCOME_BUDGET, conexpMap);
-
-            List<ConsolidateIncomeBudget> conexpbudlist = new Gson().fromJson(result1, new TypeToken<List<ConsolidateIncomeBudget>>() {
-            }.getType());
-            String id = ((LinkedTreeMap<String, String>) cl.getId()).get("$oid");
-            for (ConsolidateIncomeBudget gal1 : conexpbudlist) {
-                List<String> li = gal1.getIncomeBudgetIdList();
-                if (li.contains(id) && !listId.contains(id)) {
-                    try {
-                        gal1.setDepartmentName(cl.getDepartmentName());
-                        finallist.add(gal1);
-                        listId.addAll(li);
-                        ledgerIds.add(cl.getLedgerId());
-
-                    } catch (Exception e) {
-                    }
+            List<String> incomeIds = cl.getIncomeBudgetIdList();
+            List<String> deptIds = new ArrayList<String>();
+            String process = "stop";
+            for (String id : incomeIds) {
+                String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.CREATE_INCOME_BUDGET_TABLE, id);
+                List<CreateIncomeBudget> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<CreateIncomeBudget>>() {
+                }.getType());
+                CreateIncomeBudget obj = incomeBudgetList.get(0);
+                deptIds.add(obj.getDepartment());
+            }
+            for (int i = 0; i < deptIds.size(); i++) {
+                if (deptData.contains(deptIds.get(i))) {
+                    process = "start";
                     break;
                 }
+            }
+            if (process.equalsIgnoreCase("start")) {
+                HashMap<String, String> conexpMap = new HashMap<String, String>();
+                conexpMap.put("ledgerId", cl.getLedgerId());
+                conexpMap.put("status", ApplicationConstants.ACTIVE);
+                String result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CONSOLIDATE_INCOME_BUDGET, conexpMap);
 
+                List<ConsolidateIncomeBudget> conexpbudlist = new Gson().fromJson(result1, new TypeToken<List<ConsolidateIncomeBudget>>() {
+                }.getType());
+                String id = ((LinkedTreeMap<String, String>) cl.getId()).get("$oid");
+                for (ConsolidateIncomeBudget gal1 : conexpbudlist) {
+                    List<String> li = gal1.getIncomeBudgetIdList();
+                    if (li.contains(id) && !listId.contains(id)) {
+                        try {
+                            gal1.setDepartmentName(cl.getDepartmentName());
+                            gal1.setRequestedAmount(cl.getAskedForAmount());
+                            gal1.setSanctionedAmount(gal1.getRevisedSanctionedAmount());
+                            finallist.add(gal1);
+                            listId.addAll(li);
+                            ledgerIds.add(cl.getLedgerId());
+
+                        } catch (Exception e) {
+                        }
+                        break;
+                    }
+
+                }
             }
         }
 
         return new Gson().toJson(finallist);
+    }
+
+    public String fetchCreateIncome(String Id) throws Exception {
+        if (Id == null || Id.isEmpty()) {
+            return null;
+        }
+        String result = DBManager.getDbConnection().fetch(ApplicationConstants.HEADWISE_INCOME_BUDGET_MASTER, Id);
+        List<HeadwiseIncomeBudget> HeadwiseIncomeBudgetList = new Gson().fromJson(result, new TypeToken<List<HeadwiseIncomeBudget>>() {
+        }.getType());
+        if (HeadwiseIncomeBudgetList == null || HeadwiseIncomeBudgetList.size() < 1) {
+            return null;
+        }
+        return new Gson().toJson(HeadwiseIncomeBudgetList.get(0));
     }
 
     public String fetch(String Id) throws Exception {
@@ -340,8 +442,8 @@ public class SearchBudgetHeadManager {
         if (Id == null || Id.isEmpty()) {
             return false;
         }
-        User user = new UserManager().fetch(loginUserId);
-        String userName = user.getFname() + " " + user.getLname();
+//        User user = new UserManager().fetch(loginUserId);
+//        String userName = user.getFname() + " " + user.getLname();
 
         Type type = new TypeToken<HeadwiseIncomeBudget>() {
         }.getType();
@@ -350,10 +452,39 @@ public class SearchBudgetHeadManager {
             return false;
         }
         HeadwiseIncomeBudget locationwiseBudgetJson = new Gson().fromJson(locationwiseBudget, type);
+        String consolidatedIncomeId = locationwiseBudgetJson.getConsolidatedIncomeId();
+
+        String ConsolidateIncomeBudgetData = new ConsolidateIncomeBudgetManager().fetch(consolidatedIncomeId);
+        if (ConsolidateIncomeBudgetData == null || ConsolidateIncomeBudgetData.isEmpty()) {
+            return false;
+        }
+        Type type1 = new TypeToken<ConsolidateIncomeBudget>() {
+        }.getType();
+        ConsolidateIncomeBudget consolidatIncomeBudgetrJson = new Gson().fromJson(ConsolidateIncomeBudgetData, type1);
+
+        ArrayList<String> li = (ArrayList<String>) consolidatIncomeBudgetrJson.getIncomeBudgetIdList();
+        for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
+            String next1 = iterator1.next();
+            new SearchBudgetHeadManager().updateIsSanctionedFlagOfFalseConsolidate(next1);
+        }
+
         locationwiseBudgetJson.setStatus(ApplicationConstants.INACTIVE);
         locationwiseBudgetJson.setConsolidateBudgetStatus(ApplicationConstants.DELETED);
-        locationwiseBudgetJson.setUpdatedBy(userName);
+//        locationwiseBudgetJson.setUpdatedBy(userName);
         boolean result = DBManager.getDbConnection().update(ApplicationConstants.HEADWISE_INCOME_BUDGET_MASTER, Id, new Gson().toJson(locationwiseBudgetJson));
         return result;
     }
+
+    public boolean updateIsSanctionedFlagOfFalseConsolidate(String id) throws Exception {
+
+        String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.CONSOLIDATE_DEPT_INCOME, id);
+        List<ConsolidateDepartmentIncome> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<ConsolidateDepartmentIncome>>() {
+        }.getType());
+        ConsolidateDepartmentIncome obj = incomeBudgetList.get(0);
+        obj.setIsSanctioned("false");
+//        obj.setUpdatedBy(userName);
+        boolean result = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_DEPT_INCOME, id, new Gson().toJson(obj));
+        return result;
+    }
+
 }

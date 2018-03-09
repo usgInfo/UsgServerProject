@@ -5,12 +5,16 @@
  */
 package com.accure.finance.manager;
 
+import com.accure.budget.dto.CreateIncomeBudget;
+import com.accure.budget.dto.ExpenseBudget;
 import com.accure.budget.dto.FinancialYear;
 import com.accure.budget.dto.FundType;
+import com.accure.budget.manager.FinancialYearManager;
 import com.accure.finance.dto.ContraVoucher;
 import com.accure.finance.dto.Group;
 import com.accure.finance.dto.JournalVoucher;
 import com.accure.finance.dto.Ledger;
+import com.accure.finance.dto.LedgerCategory;
 import com.accure.finance.dto.LedgerList;
 import com.accure.finance.dto.ManageOpeningBalance;
 import com.accure.finance.dto.PaymentVoucher;
@@ -336,6 +340,106 @@ public class ManageOpeningBalanceManager {
         nf.setRoundingMode(RoundingMode.HALF_UP);
         String output = nf.format(amount).replaceAll(",", "");
         return output;
+    }
+    
+    public Ledger checkLedgerIsBudgetTypeOrNot(String ledgerId) throws Exception {
+        if (ledgerId == null || ledgerId.isEmpty()) {
+            return null;
+        }
+        String ledgerJson = DBManager.getDbConnection().fetch(ApplicationConstants.LEDGER_TABLE, ledgerId);
+        if (ledgerJson == null || ledgerJson.isEmpty()) {
+            return null;
+        }
+        List<Ledger> ledgerList = new Gson().fromJson(ledgerJson, new TypeToken<List<Ledger>>() {
+        }.getType());
+        if (ledgerList == null || ledgerList.isEmpty()) {
+            return null;
+        }
+        return ledgerList.get(0);
+
+    }
+    
+    public LedgerCategory checkLedgerCategoryIsIncomeOrBudget(String ledgerId) throws Exception {
+        if (ledgerId == null || ledgerId.isEmpty()) {
+            return null;
+        }
+        String ledgerCategoryJson = DBManager.getDbConnection().fetch(ApplicationConstants.LEDGER_CATEGORY_TABLE, ledgerId);
+        if (ledgerCategoryJson == null || ledgerCategoryJson.isEmpty()) {
+            return null;
+        }
+        List<LedgerCategory> ledgerCategoryList = new Gson().fromJson(ledgerCategoryJson, new TypeToken<List<LedgerCategory>>() {
+        }.getType());
+        if (ledgerCategoryList == null || ledgerCategoryList.isEmpty()) {
+            return null;
+        }
+        return ledgerCategoryList.get(0);
+
+    }
+    
+    public List<LedgerCategory> checkLedgerIsIncomeOrBudgetCategory(String ledger) throws Exception {
+
+        HashMap<String, String> conditionMap = new HashMap<String, String>();
+        conditionMap.put("parentLedger", ledger);
+        conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        String ledgerCategoryJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.LEDGER_CATEGORY_TABLE, conditionMap);
+        List<LedgerCategory> ledgerCategoryList = new Gson().fromJson(ledgerCategoryJson, new TypeToken<List<LedgerCategory>>() {
+        }.getType());
+
+        return ledgerCategoryList;
+    }
+    
+    public List<CreateIncomeBudget> getSanctionedAndExtraProvisionAmount(String ledgerId, String financialYearId) throws Exception {
+
+        String finYear ="";
+        
+        String FYJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_FINACIAL_YEAR_TABLE, financialYearId);
+        
+        if (FYJson != null) {
+
+                        List<FinancialYear> finYearList = new Gson().fromJson(FYJson, new TypeToken<List<FinancialYear>>() {
+                        }.getType());
+
+                        FinancialYear yearObj = finYearList.get(0);
+                        finYear=yearObj.getYear();
+                       
+                    }
+        
+        HashMap<String, String> conditionMap = new HashMap<String, String>();
+        conditionMap.put("financialYear", finYear);
+        conditionMap.put("ledgerId", ledgerId);
+        conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        String incomeBudgetJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CREATE_INCOME_BUDGET_TABLE, conditionMap);
+        List<CreateIncomeBudget> incomeBudgetList = new Gson().fromJson(incomeBudgetJson, new TypeToken<List<CreateIncomeBudget>>() {
+        }.getType());
+
+        return incomeBudgetList;
+    }
+    
+    public List<ExpenseBudget> getSanctionedAndExtraProvisionAmountExpense(String ledgerId, String financialYearId) throws Exception {
+
+//        String finYear ="";
+//        
+//        String FYJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_FINACIAL_YEAR_TABLE, financialYearId);
+//        
+//        if (FYJson != null) {
+//
+//                        List<FinancialYear> finYearList = new Gson().fromJson(FYJson, new TypeToken<List<FinancialYear>>() {
+//                        }.getType());
+//
+//                        FinancialYear yearObj = finYearList.get(0);
+//                        finYear=yearObj.getYear();
+//                       
+//                    }
+        
+        HashMap<String, String> conditionMap = new HashMap<String, String>();
+        conditionMap.put("financialYearId", financialYearId);
+        conditionMap.put("ledgerId", ledgerId);
+        conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        String incomeBudgetJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.BUDGET_EXPENSE_TABLE, conditionMap);
+        List<ExpenseBudget> incomeBudgetList = new Gson().fromJson(incomeBudgetJson, new TypeToken<List<ExpenseBudget>>() {
+        }.getType());
+
+        return incomeBudgetList;
     }
 
     public static void main(String args[]) throws Exception {

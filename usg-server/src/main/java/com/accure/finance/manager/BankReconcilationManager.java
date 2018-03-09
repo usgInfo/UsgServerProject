@@ -99,6 +99,7 @@ public class BankReconcilationManager {
             }.getType();
             PaymentVoucher em = new Gson().fromJson(ob.toString(), type);
             if (em.getPaymentMode().equalsIgnoreCase("Cheque")) {
+                if((em.getPostingStatus().equals("Posted"))){
                 for (int i = 0; i < em.getLedgerList().size(); i++) {
                     if (em.getLedgerList().get(i).getDrCr().equalsIgnoreCase("Cr") && em.getLedgerList().get(i).getGroupName().equalsIgnoreCase("Bank Group") && em.getLedgerList().get(i).getLedger().equalsIgnoreCase(bankReconcilation.getLedger())) {
                         payvouCon = "Yes";
@@ -115,6 +116,7 @@ public class BankReconcilationManager {
                     voucherList.add(finallist);
                 }
             }
+            }
 
         }
         //System.out.println(new Gson().toJson(voucherList));
@@ -126,6 +128,7 @@ public class BankReconcilationManager {
             }.getType();
             ContraVoucher em = new Gson().fromJson(contraob.toString(), type);
             if (em.getPaymentMode().equalsIgnoreCase("Cheque")) {
+                if((em.getPostingStatus().equals("Posted"))){
                 for (int i = 0; i < em.getLedgerList().size(); i++) {
                     if (em.getLedgerList().get(i).getGroupName().equalsIgnoreCase("Bank Group") && em.getLedgerList().get(i).getLedger().equalsIgnoreCase(bankReconcilation.getLedger())) {
                         convouCon = "Yes";
@@ -142,6 +145,7 @@ public class BankReconcilationManager {
                     voucherList.add(finallist);
                 }
             }
+            }
 
         }
         while (receiptcursor.hasNext()) {
@@ -151,6 +155,7 @@ public class BankReconcilationManager {
             }.getType();
             ReceiptVoucher em = new Gson().fromJson(receiptob.toString(), type);
             if (em.getPaymentMode().equalsIgnoreCase("Cheque")) {
+                if((em.getPostingStatus().equals("Posted"))){
                 for (int i = 0; i < em.getLedgerList().size(); i++) {
                     if (em.getLedgerList().get(i).getGroupName().equalsIgnoreCase("Bank Group") && em.getLedgerList().get(i).getLedger().equalsIgnoreCase(bankReconcilation.getLedger())) {
                         recvouCon = "Yes";
@@ -165,6 +170,7 @@ public class BankReconcilationManager {
                     finallist.setVoucherDate(em.getVoucherDate());
                     finallist.setFundType(em.getFundType());
                     voucherList.add(finallist);
+                }
                 }
             }
 
@@ -315,6 +321,17 @@ public class BankReconcilationManager {
 
             String bankcontraJson = new Gson().toJson(contraVoucherrJson);
             bankrestatus = DBManager.getDbConnection().update(ApplicationConstants.CONTRA_VOUCHER_TABLE, bankReconcilation.getVoucherId(), bankcontraJson);
+        } else if (bankReconcilation.getVoucherName().equalsIgnoreCase("ReceiptVoucher")) {
+            String ReceiptDb = new ReceiptVoucherManager().fetch(bankReconcilation.getVoucherId());
+            Type type = new TypeToken<ReceiptVoucher>() {
+            }.getType();
+            ReceiptVoucher receiptVoucherJson = new Gson().fromJson(ReceiptDb, type);
+            receiptVoucherJson.setEntryStatus(bankReconcilation.getEntryStatus());
+            receiptVoucherJson.setUpdateDate(System.currentTimeMillis() + "");
+            receiptVoucherJson.setUpdatedBy(userName);
+
+            String bankcontraJson = new Gson().toJson(receiptVoucherJson);
+            bankrestatus = DBManager.getDbConnection().update(ApplicationConstants.RECEIPT_VOUCHER_TABLE, bankReconcilation.getVoucherId(), bankcontraJson);
         }
         if (bankrestatus) {
             return true;

@@ -33,6 +33,7 @@ public class ApplicationConstants {
     public static final String RETIREMENT_DATE_VALIDATE_FOR_INSC_TRANS = "dateValidation";
     public static final String SALARY_VALIDATION = "salryAlreadyProcessedForInsc";
     public static final String DUPLICATE = "duplicate";
+    public static final String DATA_EXISTED = "Already Existed";
     public static final String DUPLICATE_ASSOCIATION = "duplicateAssociation";
     public static final String DUPLICATE_EMP_CODE = "duplicateEmpCode";
     public static final String DUPLICATE_NOMINEES = "duplicateNominees";
@@ -286,7 +287,7 @@ public class ApplicationConstants {
     public static final String AUTHENTICATION = "authenticate";
     public static final String LOGOUT = "logout";
     public static final String USER = "user";
-
+    public static final String ADDYOURDEPT = "ADD";
     //HTTP status codes
     public static final String HTTP_STATUS_SUCCESS = "200";
     public static final String HTTP_STATUS_FAIL = "501";
@@ -1337,12 +1338,41 @@ public class ApplicationConstants {
     public static final String AFTER_ASSIGNMENT = "AfterAssignment";
     public static final String BEFORE_ASSIGNMENT = "BeforeAssignment";
 
-//    for USG Examination
-//    for USG Admission
+    //for Application Form
+    public static final String APPLICATION_FORM_SAVE = "SaveApplicationForm";
+    public static final String APPLICATION_FORM_VIEW = "ViewApplicationForm";
+    public static final String APPLICATION_FORM_UPDATE = "UpdateApplicationForm";
+    public static final String APPLICATION_FORM_DELETE = "DeleteApplicationForm";
+
+    //ADMISSION 
+    //course Master
+    public static final String COURSE_MASTER_TABLE = "course_master";
+    //course ategeory
+    public static final String PV_CREATE_COURSE = "CreateCourse";
+    public static final String PV_VIEW_COURSE = "ViewCourse";
+    public static final String PV_UPDATE_COURSE = "UpdateCourse";
+    public static final String PV_DELETE_COURSE = "DeleteCourse";
     public static final String PROGRAM_TYPE_TABLE = "program_type_master";
     public static final String PERIOD_TABLE = "period_master";
     public static final String FACULTY_TABLE = "faculty_master";
     public static final String FACULTY_DEGREE_MAPPING_TABLE = "faculty_degree_mapping_master";
     public static final String SUBJECT_TABLE = "subject_master";
     public static final String PROGRAM_TABLE = "program_master";
+    public static final String BOARD_TABLE = "board_master";
+    public static final String COLLEGE_TABLE = "college_master";
+    public static final String SPECIAL_CLAIM_TABLE = "special_claim_master";
+    public static final String LEARNING_CENTRE_TABLE = "learning_centre_master";
+
+//    for Board Master
+    public static final String BOARD_CREATION_FAILED = "Board creation failed";
+
+//    for College Master
+    public static final String COLLEGE_CREATION_FAILED = "College creation failed";
+//    for Board Master
+    public static final String SPECIAL_CLAIM_CREATION_FAILED = "Special Claim creation failed";
+//    for Learning Centre Master
+    public static final String LEARNING_CENTRE_CREATION_FAILED = "Learning Centre creation failed";
+    public static final String LEARNING_CENTRE_LIST = "Learning Centre List";
+    public static final String APPLICATION_FORM = "applicationForm";
+
 }

@@ -51,9 +51,9 @@ public class LeaveTransactionService extends HttpServlet {
         try {
             HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
-                User currentUser = (User) session.getAttribute("user");
-                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
-                if (authorized) {
+//                User currentUser = (User) session.getAttribute("user");
+//                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
+//                if (authorized) {
                     String objJson = request.getParameter("objJson");
                     String loginUserId = request.getParameter("userid");
                     Type type = new TypeToken<LeaveTransaction>() {
@@ -69,10 +69,10 @@ public class LeaveTransactionService extends HttpServlet {
                         out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
                         logger.info(Common.getLogMsg("LeaveTransactionService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
                     }
-                } else {
-                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
-                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
-                }
+//            } else {
+//                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
+//                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
+//                }
             } else {
                 request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
                 out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));

@@ -213,9 +213,9 @@ public class UserManager {
             SecureRandom random = new SecureRandom();
             String randomPassword = new BigInteger(130, random).toString(32);
             String subject = (String) getConfig().getProperty("new-password-subject");
-            new EmailManager().sendEmail(emailId, subject, randomPassword);
+            new EmailManager().sendEmail(emailId, subject, Security.encryptPassword(randomPassword));
             User user = users.get(0);
-            user.setPassword(Security.encryptPassword(randomPassword));
+            user.setPassword(randomPassword);
             Map<String, String> idMap = (Map<String, String>) user.getId();
             boolean status = update(user, idMap.get("$oid"));
             return status;

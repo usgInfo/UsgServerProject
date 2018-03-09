@@ -49,6 +49,7 @@ public class ConsolidateDeptExpenseManager {
 //        }
         String result1 = "";
         if (condition.equalsIgnoreCase("SearchInConsolidateTable")) {
+            List<ConsolidateDepartmentExpence> finallist = new ArrayList<ConsolidateDepartmentExpence>();
             if (obj.getSector().isEmpty() == false) {
                 conditionMap.put("sector", obj.getSector());
             }
@@ -59,12 +60,33 @@ public class ConsolidateDeptExpenseManager {
             result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CONSOLIDATE_DEPARTMENT_EXPENSE, conditionMap);
             List<ConsolidateDepartmentExpence> list = new Gson().fromJson(result1, new TypeToken<List<ConsolidateDepartmentExpence>>() {
             }.getType());
+            for (ConsolidateDepartmentExpence cl : list) {
+                List<String> incomeIds = cl.getIncomeBudgetIdList();
+                List<String> deptIds = new ArrayList<String>();
+                String process = "stop";
+                for (String id : incomeIds) {
+                    String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_EXPENSE_TABLE, id);
+                    List<CreateBudgetExpense> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<CreateBudgetExpense>>() {
+                    }.getType());
+                    CreateBudgetExpense obj1 = incomeBudgetList.get(0);
+                    deptIds.add(obj1.getDepartment());
+                }
+                for (int i = 0; i < deptIds.size(); i++) {
+                    if (deptData.contains(deptIds.get(i))) {
+                        process = "start";
+                        break;
+                    }
+                }
+                if (process.equalsIgnoreCase("start")) {
+                    finallist.add(cl);
+                }
 
+            }
             try {
-                list = getBudgetHeadAndDescForExpense(list);
+                finallist = getBudgetHeadAndDescForExpense(finallist);
             } catch (Exception e) {
             }
-            return new Gson().toJson(list);
+            return new Gson().toJson(finallist);
         } else if (condition.equalsIgnoreCase("IncomeBudget")) {
             //System.out.println("************************************************Second Method**************************************");
             conditionMap.put(ApplicationConstants.INCOME_BUDGET_STATUS, ApplicationConstants.IS_CONSOLIDATED_TRUE);
@@ -103,24 +125,26 @@ public class ConsolidateDeptExpenseManager {
                     }
                     //System.out.println("Before If Loop" + flag);
                     if (flag == null || flag.equalsIgnoreCase("false")) {
-                        //System.out.println("After If Loop");
-                        if (map.get(next.getLedgerId()) == null) {
-                            map.put(next.getLedgerId(), Integer.parseInt(next.getRequestedAmount()));
-                            budgetmap.put(next.getLedgerId(), next.getBudgetHead());
-                            try {
-                                BudgetHeadIncomeBudgetIdmap = addBudgetCodeIncomeBudgetId(BudgetHeadIncomeBudgetIdmap, next);
-                            } catch (Exception e) {
-                                //System.out.println("Exception" + e);
+                        if (!next.getRequestedAmount().equalsIgnoreCase("0")) {
+                            //System.out.println("After If Loop");
+                            if (map.get(next.getLedgerId()) == null) {
+                                map.put(next.getLedgerId(), Integer.parseInt(next.getRequestedAmount()));
+                                budgetmap.put(next.getLedgerId(), next.getBudgetHead());
+                                try {
+                                    BudgetHeadIncomeBudgetIdmap = addBudgetCodeIncomeBudgetId(BudgetHeadIncomeBudgetIdmap, next);
+                                } catch (Exception e) {
+                                    //System.out.println("Exception" + e);
+                                }
+                            } else {
+                                int total = map.get(next.getLedgerId());
+                                total = total + Integer.parseInt(next.getRequestedAmount());
+                                try {
+                                    BudgetHeadIncomeBudgetIdmap = addBudgetCodeIncomeBudgetId(BudgetHeadIncomeBudgetIdmap, next);
+                                } catch (Exception e) {
+                                    //System.out.println("Exception" + e);
+                                }
+                                map.put(next.getLedgerId(), total);
                             }
-                        } else {
-                            int total = map.get(next.getLedgerId());
-                            total = total + Integer.parseInt(next.getRequestedAmount());
-                            try {
-                                BudgetHeadIncomeBudgetIdmap = addBudgetCodeIncomeBudgetId(BudgetHeadIncomeBudgetIdmap, next);
-                            } catch (Exception e) {
-                                //System.out.println("Exception" + e);
-                            }
-                            map.put(next.getLedgerId(), total);
                         }
                     } else if (flag.equalsIgnoreCase("true")) {
                         //System.out.println("Fals is true");
@@ -287,6 +311,7 @@ public class ConsolidateDeptExpenseManager {
         }.getType());
         CreateBudgetExpense obj = incomeBudgetList.get(0);
         obj.setIsConsolidated(ApplicationConstants.IS_CONSOLIDATED_TRUE);
+        obj.setIsConsolidate(ApplicationConstants.IS_CONSOLIDATED_TRUE);
         obj.setConsolidatedTime(System.currentTimeMillis() + "");
 //        obj.setConsolidatedTime(userName);
         boolean result = DBManager.getDbConnection().update(ApplicationConstants.BUDGET_EXPENSE_TABLE, id, new Gson().toJson(obj));
@@ -354,6 +379,13 @@ public class ConsolidateDeptExpenseManager {
             return false;
         }
         ConsolidateDepartmentExpence consolidateDeptExpenJson = new Gson().fromJson(consolidateDeptExpense, type);
+
+        ArrayList<String> li = (ArrayList<String>) consolidateDeptExpenJson.getIncomeBudgetIdList();
+        for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
+            String next1 = iterator1.next();
+            new ConsolidateDeptExpenseManager().updateIsConsolidateFlagOfFalseExpenseBudget(next1, userName);
+        }
+
         consolidateDeptExpenJson.setStatus(ApplicationConstants.INACTIVE);
         consolidateDeptExpenJson.setConsolidateBudgetStatus(ApplicationConstants.DELETED);
         consolidateDeptExpenJson.setUpdatedBy(userName);
@@ -361,4 +393,132 @@ public class ConsolidateDeptExpenseManager {
         return result;
     }
 
+    public boolean updateIsConsolidateFlagOfFalseExpenseBudget(String id, String userName) throws Exception {
+        String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_EXPENSE_TABLE, id);
+        List<CreateBudgetExpense> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<CreateBudgetExpense>>() {
+        }.getType());
+        CreateBudgetExpense obj = incomeBudgetList.get(0);
+        obj.setIsConsolidate("False");
+        obj.setConsolidatedTime(System.currentTimeMillis() + "");
+        obj.setConsolidatedTime(userName);
+        boolean result = DBManager.getDbConnection().update(ApplicationConstants.BUDGET_EXPENSE_TABLE, id, new Gson().toJson(obj));
+        return result;
+    }
+
+    public String getsrNos(ConsolidateDepartmentExpence createexpenseBudgetObj, List deptData) throws Exception {
+        String finYear = createexpenseBudgetObj.getFinancialYear();
+        String budgetType = createexpenseBudgetObj.getBudgetType();
+        String ddo = createexpenseBudgetObj.getDdo();
+        String location = createexpenseBudgetObj.getLocation();
+        String fundType = createexpenseBudgetObj.getFundType();
+        String sector = createexpenseBudgetObj.getSector();
+        String department = createexpenseBudgetObj.getDepartment();
+        String budgetTypeName = "";
+        if (budgetType != null) {
+            String budgetTypeJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_TYPE_TABLE, budgetType);
+            if (budgetTypeJson != null) {
+                List<BudgetType> BudgetTypeList = new Gson().fromJson(budgetTypeJson, new TypeToken<List<BudgetType>>() {
+                }.getType());
+                budgetTypeName = BudgetTypeList.get(0).getDescription();
+            }
+        }
+        if (budgetTypeName.equals("Revised")) {
+            HashMap<String, String> conditionMap = new HashMap<String, String>();
+            HashMap<String, ConsolidateDepartmentExpence> map = new HashMap<String, ConsolidateDepartmentExpence>();
+            conditionMap.put("fundType", fundType);
+            conditionMap.put("budgetTypeName", "Estimated");
+            conditionMap.put("location", location);
+            conditionMap.put("ddo", ddo);
+            conditionMap.put("financialYear", finYear);
+            conditionMap.put("sector", sector);
+            if (department != "" && department != null) {
+                conditionMap.put("department", department);
+            }
+            String budgetJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CONSOLIDATE_DEPARTMENT_EXPENSE, conditionMap);
+            //System.out.println("--budgetJson--" + budgetJson);
+            if (budgetJson != null) {
+                List<ConsolidateDepartmentExpence> incomeBudgetList = new Gson().fromJson(budgetJson, new TypeToken<List<ConsolidateDepartmentExpence>>() {
+                }.getType());
+                for (ConsolidateDepartmentExpence income : incomeBudgetList) {
+                    List<String> incomeIds = income.getIncomeBudgetIdList();
+                    List<String> deptIds = new ArrayList<String>();
+                    String process = "stop";
+                    for (String id : incomeIds) {
+                        String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_EXPENSE_TABLE, id);
+                        List<CreateBudgetExpense> incomeBudgetListData = new Gson().fromJson(existrelationJson, new TypeToken<List<CreateBudgetExpense>>() {
+                        }.getType());
+                        CreateBudgetExpense obj1 = incomeBudgetListData.get(0);
+                        deptIds.add(obj1.getDepartment());
+                    }
+                    for (int i = 0; i < deptIds.size(); i++) {
+                        if (deptData.contains(deptIds.get(i))) {
+                            process = "start";
+                            break;
+                        }
+                    }
+                    if (process.equalsIgnoreCase("start")) {
+                        map.put(income.getSrNo(), income);
+                    }
+
+                }
+                incomeBudgetList.clear();
+                incomeBudgetList.addAll(map.values());
+                return new Gson().toJson(incomeBudgetList);
+            }
+        }
+        return "";
+    }
+
+    public String fetchAllBasedOnFinancialYear(String year, String fundType, String sector, String budgetType) throws Exception {
+        HashMap<String, String> conditionMap = new HashMap<String, String>();
+        conditionMap.put("financialYear", year);
+        conditionMap.put("budgetType", budgetType);
+        conditionMap.put("fundType", fundType);
+        conditionMap.put("sector", sector);
+        conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        String result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CONSOLIDATE_DEPARTMENT_EXPENSE, conditionMap);
+        return result1;
+    }
+
+    public String getSlNumber(String year, String fundType, String sector, String budgetType) throws Exception {
+        String result = new ConsolidateExpenseBudgetManager().fetchAllBasedOnFinancialYear(year, fundType, sector, budgetType);
+        List<ConsolidateDepartmentExpence> loanApplyList = new Gson().fromJson(result, new TypeToken<List<ConsolidateDepartmentExpence>>() {
+        }.getType());
+
+        int numb = 0;
+        if (loanApplyList != null) {
+            ConsolidateDepartmentExpence pv = loanApplyList.get(0);
+            String len = pv.getSrNo();
+            if (len != null && len != "") {
+                String[] arr = len.split("-");
+                String sNo = arr[2];
+                int value = Integer.parseInt(sNo);
+                return String.valueOf(value);
+            }
+        } else {
+            HashMap<String, String> map = new HashMap<String, String>();
+            map.put("financialYear", year);
+            map.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+            String result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CONSOLIDATE_DEPARTMENT_EXPENSE, map);
+            if (result1 != null) {
+                List<ConsolidateDepartmentExpence> list = new Gson().fromJson(result1, new TypeToken<List<ConsolidateDepartmentExpence>>() {
+                }.getType());
+                for (Iterator<ConsolidateDepartmentExpence> iterator = list.iterator(); iterator.hasNext();) {
+                    ConsolidateDepartmentExpence next = iterator.next();
+                    String len = next.getSrNo();
+                    if (len != null && len != "") {
+                        String[] arr = len.split("-");
+                        String sNo = arr[2];
+                        int value = Integer.parseInt(sNo);
+
+                        if (numb < value) {
+                            numb = value;
+                        }
+                    }
+                }
+            }
+        }
+        numb++;
+        return String.valueOf(numb);
+    }
 }

@@ -240,9 +240,21 @@ public class SanctionUniversityIncomeBudgetManager {
             return false;
         }
         SanctionUniversityIncomeBudget bankJson = new Gson().fromJson(bank, type);
+        new SanctionUniversityIncomeBudgetManager().updateIsSanctionFlagOfFalseConsolidateIncome(bankJson.getConsolidateExpenseBudgetId());
         bankJson.setStatus(ApplicationConstants.INACTIVE);
         boolean result = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_SACTION_INCOME, id, new Gson().toJson(bankJson));
         //System.out.println("deleteResult" + result);
+        return result;
+    }
+
+    public boolean updateIsSanctionFlagOfFalseConsolidateIncome(String id) throws Exception {
+        String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.CONSOLIDATE_INCOME_BUDGET, id);
+        List<ConsolidateIncomeBudget> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<ConsolidateIncomeBudget>>() {
+        }.getType());
+        ConsolidateIncomeBudget obj = incomeBudgetList.get(0);
+        obj.IsSanctioned("false");
+        obj.setUpdateDate(System.currentTimeMillis() + "");
+        boolean result = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_INCOME_BUDGET, id, new Gson().toJson(obj));
         return result;
     }
 
@@ -298,7 +310,23 @@ public class SanctionUniversityIncomeBudgetManager {
         String Id = DBManager.getDbConnection().insert(ApplicationConstants.CONSOLIDATE_SACTION_INCOME, sanctionIncomeJson);
         //System.out.println("id" + Id);
         if (Id != null) {
-            return Id;
+            String result = DBManager.getDbConnection().fetch(ApplicationConstants.CONSOLIDATE_INCOME_BUDGET, sanctionincome.getConsolidateExpenseBudgetId());
+            //System.out.println(sanctionincome.getConsolidateExpenseBudgetId() + "fdfsgffd" + result);
+            List<ConsolidateIncomeBudget> relationlist = new Gson().fromJson(result, new TypeToken<List<ConsolidateIncomeBudget>>() {
+            }.getType());
+            //System.out.println(sanctionincome.getApprovedAmount());
+            ConsolidateIncomeBudget consolidateincomebudget = relationlist.get(0);
+            consolidateincomebudget.setCreateDate(consolidateincomebudget.getCreateDate());
+            consolidateincomebudget.setUpdateDate(System.currentTimeMillis() + "");
+            consolidateincomebudget.setStatus(ApplicationConstants.ACTIVE);
+            consolidateincomebudget.setSanctionedAmount(sanctionincome.getApprovedAmount());
+            consolidateincomebudget.setRevisedSanctionedAmount(sanctionincome.getApprovedAmount());//upendra
+            consolidateincomebudget.IsSanctioned(ApplicationConstants.INCOME_BUDGET_SACTION_STATUS_MEAASGE);
+            String incomeJson = new Gson().toJson(consolidateincomebudget);
+            boolean resultstaus = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_INCOME_BUDGET, sanctionincome.getConsolidateExpenseBudgetId(), incomeJson);
+            if (resultstaus) {
+                return Id;
+            }
         }
         return null;
     }
@@ -396,10 +424,10 @@ public class SanctionUniversityIncomeBudgetManager {
         return result1;
     }
 
-    public String fetchAllBasedOnFinancialYear(String year, String fundType, String sector, String budgetHead) throws Exception {
+    public String fetchAllBasedOnFinancialYear(String year, String fundType, String sector, String budgetType) throws Exception {
         HashMap<String, String> conditionMap = new HashMap<String, String>();
         conditionMap.put("financialYear", year);
-        conditionMap.put("budgetHead", budgetHead);
+        conditionMap.put("budgetType", budgetType);
         conditionMap.put("fundType", fundType);
         conditionMap.put("sector", sector);
         String result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CONSOLIDATE_SACTION_INCOME, conditionMap);
@@ -409,8 +437,8 @@ public class SanctionUniversityIncomeBudgetManager {
         return result1;
     }
 
-    public String getSlNumber(String year, String fundType, String sector, String budgetHead) throws Exception {
-        String result = new SanctionUniversityIncomeBudgetManager().fetchAllBasedOnFinancialYear(year, fundType, sector, budgetHead);
+    public String getSlNumber(String year, String fundType, String sector, String budgetType) throws Exception {
+        String result = new SanctionUniversityIncomeBudgetManager().fetchAllBasedOnFinancialYear(year, fundType, sector, budgetType);
         List<SanctionUniversityIncomeBudget> loanApplyList = new Gson().fromJson(result, new TypeToken<List<SanctionUniversityIncomeBudget>>() {
         }.getType());
         int numb = 0;

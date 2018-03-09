@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
  */
 public class GetBudgetExpLedgersDeptWise extends HttpServlet {
 
-   Logger logger = Logger.getLogger(GetBudgetExpLedgersDeptWise.class);
+    Logger logger = Logger.getLogger(GetBudgetExpLedgersDeptWise.class);
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -43,12 +43,18 @@ public class GetBudgetExpLedgersDeptWise extends HttpServlet {
                 String budgetHead = request.getParameter("budgetHead");
                 String location = request.getParameter("location");
                 String department = request.getParameter("department");
+                String budgetType = request.getParameter("budgetType");
+                String empid = request.getParameter("empid");
                 DepartmentWiseExpAlloManager section = new DepartmentWiseExpAlloManager();
-                String resultJson = section.search(ddo, fundType, sector, finyear, budgetHead, location,department);
+                String resultJson = section.search(ddo, fundType, sector, finyear, budgetHead, location, department);
                 if (resultJson != null && !resultJson.isEmpty()) {
-                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
-                    out.write(resultJson);
-                    logger.info(Common.getLogMsg("SearchDDOForBudgetExpense", ApplicationConstants.VIEW, ApplicationConstants.SUCCESS));
+                    if (resultJson.equalsIgnoreCase("DepartmentFirst")) {
+                        out.write(new Gson().toJson(ApplicationConstants.ADDYOURDEPT));
+                    } else {
+                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
+                        out.write(resultJson);
+                    }
+                    // logger.info(Common.getLogMsg("SearchDDOForBudgetExpense", ApplicationConstants.VIEW, ApplicationConstants.SUCCESS));
                 } else {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
                     out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));

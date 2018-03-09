@@ -51,12 +51,13 @@ public class FetchDateWiseDepositReport extends HttpServlet {
             if (SessionManager.checkUserSession(session)) {
             String date = request.getParameter("date");
             String fin = URLDecoder.decode(request.getParameter("fin"));
+            String currentYear = request.getParameter("currentYear");
             String voucherdata = URLDecoder.decode(request.getParameter("voucherList"));
             String ledger = URLDecoder.decode(request.getParameter("ledger"));
             ServletContext servletContext = getServletContext();
             String path = File.separator + "usg" + File.separator + "images";
             String contextPath = servletContext.getRealPath("/"+path);
-            ByteArrayOutputStream outputJson = new DepositManager().depositReportPdfStatement(date, voucherdata, ledger, contextPath, fin);
+            ByteArrayOutputStream outputJson = new DepositManager().depositReportPdfStatement(date, voucherdata, ledger, contextPath, fin, currentYear);
             if (outputJson != null) {
                 request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
                 ByteArrayOutputStream baos = outputJson;

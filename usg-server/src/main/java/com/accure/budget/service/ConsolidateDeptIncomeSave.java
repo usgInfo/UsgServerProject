@@ -52,55 +52,55 @@ public class ConsolidateDeptIncomeSave extends HttpServlet {
         PrintWriter out = response.getWriter();
 
         try {
-            HttpSession session = request.getSession(false);
-            if (SessionManager.checkUserSession(session)) {
+//            HttpSession session = request.getSession(false);
+//            if (SessionManager.checkUserSession(session)) {
 
-                String objJson = request.getParameter("objJson");
-                String loginUserId = request.getParameter("userid");
-                String finyear = request.getParameter("financialYear");
-                String fundType = request.getParameter("fundType");
-                String sector = request.getParameter("sector");
-                String budgetHead = request.getParameter("budgetHead");
-                String department = request.getParameter("department");
-                User user = new UserManager().fetch(loginUserId);
-                String userName = user.getFname() + " " + user.getLname();
-                //
-                List<ConsolidateDepartmentIncome> list = new Gson().fromJson(objJson, new TypeToken<List<ConsolidateDepartmentIncome>>() {
-                }.getType());
-                int count = list.size();
-                int resultCount = 0;
-                String srNo = new ConsolidateIncomeBudgetManager().getSlNumber(finyear, fundType, sector, budgetHead);
-                for (Iterator<ConsolidateDepartmentIncome> iterator = list.iterator(); iterator.hasNext();) {
-                    ConsolidateDepartmentIncome next = iterator.next();
+            String objJson = request.getParameter("objJson");
+            String loginUserId = request.getParameter("userid");
+            String finyear = request.getParameter("financialYear");
+            String fundType = request.getParameter("fundType");
+            String sector = request.getParameter("sector");
+            String budgetType = request.getParameter("budgetType");
+            String department = request.getParameter("department");
+            User user = new UserManager().fetch(loginUserId);
+            String userName = user.getFname() + " " + user.getLname();
+            //
+            List<ConsolidateDepartmentIncome> list = new Gson().fromJson(objJson, new TypeToken<List<ConsolidateDepartmentIncome>>() {
+            }.getType());
+            int count = list.size();
+            int resultCount = 0;
+            String srNo = new ConsolidateDeptIncomeManager().getSlNumber(finyear, fundType, sector, budgetType);
+            for (Iterator<ConsolidateDepartmentIncome> iterator = list.iterator(); iterator.hasNext();) {
+                ConsolidateDepartmentIncome next = iterator.next();
 
-                    if (new ConsolidateDeptIncomeManager().save(next, loginUserId, srNo) != "") {
-                        ArrayList<String> li = (ArrayList<String>) next.getIncomeBudgetIdList();
-                        for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
-                            String next1 = iterator1.next();
-                            new ConsolidateDeptIncomeManager().updateIsConsolidateFlagOfIncomeBudget(next1, userName);
-                        }
-                        resultCount++;
+                if (new ConsolidateDeptIncomeManager().save(next, loginUserId, srNo) != "") {
+                    ArrayList<String> li = (ArrayList<String>) next.getIncomeBudgetIdList();
+                    for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
+                        String next1 = iterator1.next();
+                        new ConsolidateDeptIncomeManager().updateIsConsolidateFlagOfIncomeBudget(next1, userName);
                     }
+                    resultCount++;
                 }
-                String result = "false";
-                if (resultCount == count) {
-                    result = "true";
-                }
-                if (result != null && !result.isEmpty()) {
-                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
-                    out.write(new Gson().toJson(result));
-                    logger.info(Common.getLogMsg("ConsolidateDeptIncomeSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
-                } else {
-                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
-                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
-                    logger.info(Common.getLogMsg("ConsolidateDeptIncomeSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
-                }
-
-            } else {
-                request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
-                out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));
-                logger.info(Common.getLogMsg("ConsolidateDeptIncomeSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.INVALID_SESSION));
             }
+            String result = "false";
+            if (resultCount == count) {
+                result = "true";
+            }
+            if (result != null && !result.isEmpty()) {
+                request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
+                out.write(new Gson().toJson(result));
+                logger.info(Common.getLogMsg("ConsolidateDeptIncomeSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
+            } else {
+                request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
+                out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
+                logger.info(Common.getLogMsg("ConsolidateDeptIncomeSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
+            }
+
+//            } else {
+//                request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
+//                out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));
+//                logger.info(Common.getLogMsg("ConsolidateDeptIncomeSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.INVALID_SESSION));
+//            }
         } catch (Exception ex) {
             request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_EXCEPTION);
             StringWriter stack = new StringWriter();

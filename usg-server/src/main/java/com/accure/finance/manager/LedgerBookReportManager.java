@@ -5,10 +5,13 @@
  */
 package com.accure.finance.manager;
 
+import com.accure.budget.dto.CreateIncomeBudget;
+import com.accure.budget.dto.ExpenseBudget;
 import com.accure.finance.dto.ContraVoucher;
 import com.accure.finance.dto.DDO;
 import com.accure.finance.dto.JournalVoucher;
 import com.accure.finance.dto.Ledger;
+import com.accure.finance.dto.LedgerCategory;
 import com.accure.finance.dto.LedgerList;
 import com.accure.finance.dto.Location;
 import com.accure.finance.dto.ManageOpeningBalance;
@@ -68,6 +71,7 @@ public class LedgerBookReportManager {
         double totalCrAmount = 0.0;
         double cbl = 0.0;
         String cbl1 = "";
+        String financialYearId = "";
 
         HashMap<String, String> conditionMap1 = new HashMap<String, String>();
         conditionMap1.put("ledgerId", ledger);
@@ -78,7 +82,72 @@ public class LedgerBookReportManager {
         String ledgerJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.MANAGE_OPENING_BALANCE_TABLE, conditionMap1);
         if (ledgerJson == null || ledgerJson.isEmpty()) {
 
+//            openingBalance = 0.00;
+            String finArr[] = fin.split("-");
+            String finYear = finArr[0];
+             HashMap<String, String> finConditionMap = new HashMap<String, String>();
+        finConditionMap.put("year", finYear);
+        finConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        String finIdJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.BUDGET_FINACIAL_YEAR_TABLE, finConditionMap);
+        if (finIdJson != null && !finIdJson.isEmpty()) {
+            List<FinancialYear> finIdList = new Gson().fromJson(finIdJson, new TypeToken<List<FinancialYear>>() {
+            }.getType());
+            FinancialYear finIdListObj = finIdList.get(0);
+            financialYearId = ((LinkedTreeMap<String, String>) finIdListObj.getId()).get("$oid");
+        }
+            Ledger led = new ManageOpeningBalanceManager().checkLedgerIsBudgetTypeOrNot(ledger);
+        
+        String budType = led.getBudgetType();
+        if(budType.equalsIgnoreCase("Yes")){
+        List<LedgerCategory> lc = new ManageOpeningBalanceManager().checkLedgerIsIncomeOrBudgetCategory(ledger);
+        if(lc != null){
+            
+            String ledgerCategory = lc.get(0).getLedgerCategory();
+            
+            if(ledgerCategory.equalsIgnoreCase("Income")){
+              List<CreateIncomeBudget>  cib = new ManageOpeningBalanceManager().getSanctionedAndExtraProvisionAmount(ledger,financialYearId);
+              if(cib != null){
+                  for(int ib = 0; ib <cib.size(); ib++){
+                  if(cib.get(ib).getIsSanctioned().equalsIgnoreCase("true")){
+                      openingBalance = openingBalance + (Double.parseDouble(cib.get(ib).getSanctionedAmount()))*100000;
+                  }
+                  if(cib.get(ib).getIsExtraProvisioned().equalsIgnoreCase("true")){
+                      openingBalance = openingBalance + (Double.parseDouble(cib.get(ib).getExtraProvisionAmount()))*100000;
+                  }
+                  }
+                  
+              }else{
             openingBalance = 0.00;
+        }
+            openingBalance = - openingBalance;
+            }
+            else if(ledgerCategory.equalsIgnoreCase("Expense")){
+             
+                List<ExpenseBudget>  ceb = new ManageOpeningBalanceManager().getSanctionedAndExtraProvisionAmountExpense(ledger,financialYearId);
+              if(ceb != null){
+                  for(int eb = 0; eb <ceb.size(); eb++){
+                  if(ceb.get(eb).getIsSanctioned().equalsIgnoreCase("true")){
+                      openingBalance = openingBalance + (Double.parseDouble(ceb.get(eb).getSanctionedAmount()))*100000;
+                  }
+                  if(ceb.get(eb).getIsExtraProvisioned().equalsIgnoreCase("true")){
+                      openingBalance = openingBalance + (Double.parseDouble(ceb.get(eb).getExtraProvisionAmount()))*100000;
+                  }
+
+                  }
+              }else{
+            openingBalance = 0.00;
+        }
+            openingBalance = + openingBalance;
+            }else{
+                openingBalance = 0.00;
+            }
+        }else{
+            openingBalance = 0.00;
+        }
+
+        }else{
+            openingBalance = 0.00;
+        }
         } else {
             List<ManageOpeningBalance> openingBalanceList = new Gson().fromJson(ledgerJson, new TypeToken<List<ManageOpeningBalance>>() {
             }.getType());

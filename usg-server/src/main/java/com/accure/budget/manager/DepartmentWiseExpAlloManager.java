@@ -5,11 +5,14 @@
  */
 package com.accure.budget.manager;
 
+import com.accure.budget.dto.BudgetType;
 import com.accure.budget.dto.ConsolidateDepartmentExpence;
 import com.accure.budget.dto.CreateBudgetExpense;
 import com.accure.budget.dto.DeptWiseExpBudgetAllocation;
 import com.accure.hrms.dto.BudgetHeadMaster;
 import com.accure.hrms.dto.Department;
+import com.accure.hrms.dto.Employee;
+import com.accure.hrms.dto.EmployeeDepartmentMapping;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.DBManager;
@@ -47,6 +50,7 @@ public class DepartmentWiseExpAlloManager {
         }
         return new Gson().toJson(expenseBudgetApprovalList);
     }
+
     public String save(DeptWiseExpBudgetAllocation expbudgetDTO, String userid) throws Exception {
 
         User user = new UserManager().fetch(userid);
@@ -131,6 +135,11 @@ public class DepartmentWiseExpAlloManager {
                     new BasicDBObject("$regex", emp.getFinYear()));
 
         }
+        if (emp.getDepartment() != null) {
+            regexQuery.put("department",
+                    new BasicDBObject("$regex", emp.getDepartment()));
+
+        }
 
         regexQuery.put("status",
                 new BasicDBObject("$regex", "Active"));
@@ -139,12 +148,21 @@ public class DepartmentWiseExpAlloManager {
         DBCursor cursor2 = collection.find(regexQuery);
 
         List<DeptWiseExpBudgetAllocation> finalList = new ArrayList<DeptWiseExpBudgetAllocation>();
+        String budgetTypeName = null;
+        String budgetTypeJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_TYPE_TABLE, emp.getBudgetType());
+        if (budgetTypeJson != null) {
+            List<BudgetType> BudgetTypeList = new Gson().fromJson(budgetTypeJson, new TypeToken<List<BudgetType>>() {
+            }.getType());
 
+            budgetTypeName = BudgetTypeList.get(0).getDescription();
+
+        }
         while (cursor2.hasNext()) {
             DBObject ob = cursor2.next();
             Type type = new TypeToken<DeptWiseExpBudgetAllocation>() {
             }.getType();
             DeptWiseExpBudgetAllocation em = new Gson().fromJson(ob.toString(), type);
+            em.setBudgetTypeName(budgetTypeName);
             finalList.add(em);
         }
 
@@ -173,41 +191,33 @@ public class DepartmentWiseExpAlloManager {
 
         for (CreateBudgetExpense cl : ddoList) {
             cl.setHeadCodeId(cl.getHeadCode());
-//            try {
-//                String gaJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_HEAD_MAPPING_TABLE, cl.getHeadCode());
-//                List<BudgetHeadMaster> gaList = new Gson().fromJson(gaJson, new TypeToken<List<BudgetHeadMaster>>() {
-//                }.getType());
-//                BudgetHeadMaster gal = gaList.get(0);
-//                cl.setHeadCode(gal.getBudgetHead());
-//
-//            } catch (Exception e) {
-//            }
             String ledgerId = cl.getLedgerId();
             HashMap<String, String> conexpMap = new HashMap<String, String>();
             conexpMap.put("ledgerId", cl.getLedgerId());
             conexpMap.put("status", ApplicationConstants.ACTIVE);
             String result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CONSOLIDATE_DEPARTMENT_EXPENSE, conexpMap);
+            if (result1 != null) {
+                List<ConsolidateDepartmentExpence> conexpbudlist = new Gson().fromJson(result1, new TypeToken<List<ConsolidateDepartmentExpence>>() {
+                }.getType());
+                String id = ((LinkedTreeMap<String, String>) cl.getId()).get("$oid");
 
-            List<ConsolidateDepartmentExpence> conexpbudlist = new Gson().fromJson(result1, new TypeToken<List<ConsolidateDepartmentExpence>>() {
-            }.getType());
-            String id = ((LinkedTreeMap<String, String>) cl.getId()).get("$oid");
-
-            for (ConsolidateDepartmentExpence gal1 : conexpbudlist) {
-                List<String> li = gal1.getIncomeBudgetIdList();
-                String consledgerId = gal1.getLedgerId();
-                String isSanctioned = gal1.getIsSanctioned();
-                //  if (li.contains(id)) {
-                if (ledgerId.equalsIgnoreCase(consledgerId) && isSanctioned.equalsIgnoreCase("true") && li.contains(id)) {
-                    try {
-                        cl.setSanctionedAmount(gal1.getRevisedSanctionedAmount());
-                        cl.setConsolidatedExpenseId(((LinkedTreeMap<String, String>) gal1.getId()).get("$oid"));
-                        cl.setCreateExpenseId(((LinkedTreeMap<String, String>) cl.getId()).get("$oid"));
-                    } catch (Exception e) {
+                for (ConsolidateDepartmentExpence gal1 : conexpbudlist) {
+                    List<String> li = gal1.getIncomeBudgetIdList();
+                    String consledgerId = gal1.getLedgerId();
+                    String isSanctioned = gal1.getIsSanctioned();
+                    //  if (li.contains(id)) {
+                    if (ledgerId.equalsIgnoreCase(consledgerId) && isSanctioned.equalsIgnoreCase("true") && li.contains(id)) {
+                        try {
+                            cl.setSanctionedAmount(gal1.getRevisedSanctionedAmount());
+                            cl.setConsolidatedExpenseId(((LinkedTreeMap<String, String>) gal1.getId()).get("$oid"));
+                            cl.setCreateExpenseId(((LinkedTreeMap<String, String>) cl.getId()).get("$oid"));
+                        } catch (Exception e) {
+                        }
+                        break;
                     }
-                    break;
-                }
 
-                //  cl.setSanctionedAmount(gal1.getSanctionedAmount());
+                    //  cl.setSanctionedAmount(gal1.getSanctionedAmount());
+                }
             }
         }
 

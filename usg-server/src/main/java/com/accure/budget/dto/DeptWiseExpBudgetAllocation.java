@@ -19,6 +19,7 @@ public class DeptWiseExpBudgetAllocation extends Common {
     private String sector;
     private String finYear;
     private String budgetType;
+    private String budgetTypeName;
     private String budgetStatus;
     private String approvedAmount;
     private String budgetHead;
@@ -201,5 +202,13 @@ public class DeptWiseExpBudgetAllocation extends Common {
 
     public void setExtraProvisionAmount(String extraProvisionAmount) {
         this.extraProvisionAmount = extraProvisionAmount;
+    }
+
+    public String getBudgetTypeName() {
+        return budgetTypeName;
+    }
+
+    public void setBudgetTypeName(String budgetTypeName) {
+        this.budgetTypeName = budgetTypeName;
     }
 }

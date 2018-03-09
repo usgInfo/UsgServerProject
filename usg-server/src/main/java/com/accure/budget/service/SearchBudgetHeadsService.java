@@ -5,8 +5,6 @@
  */
 package com.accure.budget.service;
 
-
-
 import com.accure.budget.dto.CreateIncomeBudget;
 import com.accure.budget.manager.SearchBudgetHeadManager;
 import com.accure.hrms.service.EmployeeSearchService;
@@ -19,6 +17,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -41,25 +40,29 @@ public class SearchBudgetHeadsService extends HttpServlet {
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
-     Logger logger = Logger.getLogger(EmployeeSearchService.class);
+    Logger logger = Logger.getLogger(EmployeeSearchService.class);
+
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
-         try {
+        try {
 
             HttpSession session = request.getSession(false);
-            if (SessionManager.checkUserSession(session)) {
-                
-               String searchObj = request.getParameter("searchObj");
+//            if (SessionManager.checkUserSession(session)) {
+
+                String searchObj = request.getParameter("searchObj");
+                String dept = request.getParameter("department");
+                Type type1 = new TypeToken<List<String>>() {
+                }.getType();
+                List<String> deptList = new Gson().fromJson(dept, type1);
                 Type type = new TypeToken<CreateIncomeBudget>() {
                 }.getType();
                 CreateIncomeBudget fc = new Gson().fromJson(searchObj, type);
-                String result = new SearchBudgetHeadManager().searchBudgetHeads(fc);
-                
-               //  String resultJson = null ;
-             // resultEmployeeJson =new Gson().toJson(new SearchBudgetHeadManager().searchBudgetHeads(employeeSearch));
-           
+                String result = new SearchBudgetHeadManager().searchBudgetHeads(fc,deptList);
+
+                //  String resultJson = null ;
+                // resultEmployeeJson =new Gson().toJson(new SearchBudgetHeadManager().searchBudgetHeads(employeeSearch));
 //                 resultEmployeeJson = new EmployeeManager().fetchAllBySearch(employeeSearch);
                 if (result != null && !result.isEmpty()) {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
@@ -70,11 +73,11 @@ public class SearchBudgetHeadsService extends HttpServlet {
                     out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
                     logger.info(Common.getLogMsg("ViewReligionService", ApplicationConstants.VIEW, ApplicationConstants.FAIL));
                 }
-            } else {
-                request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
-                out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));
-                logger.info(Common.getLogMsg("ViewReligionService", ApplicationConstants.FAIL, ApplicationConstants.INVALID_SESSION));
-            }
+//            } else {
+//                request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
+//                out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));
+//                logger.info(Common.getLogMsg("ViewReligionService", ApplicationConstants.FAIL, ApplicationConstants.INVALID_SESSION));
+//            }
         } catch (Exception ex) {
             request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_EXCEPTION);
             StringWriter stack = new StringWriter();

@@ -5,11 +5,8 @@
  */
 package com.accure.budget.service;
 
-import com.accure.budget.dto.CreateBudgetExpense;
 import com.accure.budget.dto.DeptWiseExpBudgetAllocation;
 import com.accure.budget.manager.BudgetReAppropriationManager;
-import com.accure.user.dto.User;
-import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
 import com.accure.usg.server.utils.Common;
@@ -18,7 +15,6 @@ import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Iterator;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

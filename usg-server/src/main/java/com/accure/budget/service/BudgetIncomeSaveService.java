@@ -61,11 +61,12 @@ public class BudgetIncomeSaveService extends HttpServlet {
                     String year = request.getParameter("year");
                     String ddo = request.getParameter("ddo");
                     String location = request.getParameter("location");
+                    String budgetType = request.getParameter("budgetType");
 
                     List<CreateIncomeBudget> list = new Gson().fromJson(objJson, new TypeToken<List<CreateIncomeBudget>>() {
                     }.getType());
                     String result = null;
-                    String newSlno = new BudgetIncomeManager().getSlNumber(year, ddo, location);
+                    String newSlno = new BudgetIncomeManager().getSlNumber(year, ddo, location,budgetType);
                     for (CreateIncomeBudget cl : list) {
                         result = new BudgetIncomeManager().Save(cl, newSlno);
                     }

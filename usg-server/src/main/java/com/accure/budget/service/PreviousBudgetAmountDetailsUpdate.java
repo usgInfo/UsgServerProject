@@ -15,6 +15,7 @@ import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Type;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -27,8 +28,10 @@ import org.apache.log4j.Logger;
  * @author user
  */
 public class PreviousBudgetAmountDetailsUpdate extends HttpServlet {
- //String privilege = ApplicationConstants.PV_UPDATE_PARTY_MASTER;
+
+    //String privilege = ApplicationConstants.PV_UPDATE_PARTY_MASTER;
     Logger logger = Logger.getLogger(PreviousBudgetAmountDetailsUpdate.class);
+
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -44,52 +47,44 @@ public class PreviousBudgetAmountDetailsUpdate extends HttpServlet {
         PrintWriter out = response.getWriter();
         try {
             /* TODO output your page here. You may use following sample code. */
-           HttpSession session = request.getSession(false);
+            HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
 //                User currentUser = (User) session.getAttribute("user");
 //                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
 //                if (authorized) {
 
-                String id = request.getParameter("id");
-                String userid = request.getParameter("userId");
-                String preBudgetActualAmount = request.getParameter("preBudgetActualAmount");
-                PreviousBudgetAmountDetails partyMasterObj = new Gson().fromJson(preBudgetActualAmount, new TypeToken<PreviousBudgetAmountDetails>() {
-                }.getType());
+                String objId = request.getParameter("Id");
+                String totalAmount = request.getParameter("totalAmount");
+                String loginUserId = request.getParameter("userid");
+                String objJson = new PreviousBudgetAmountDetailsManager().fetch(objId);
+                Type type = new TypeToken<PreviousBudgetAmountDetails>() {
+                }.getType();
+                PreviousBudgetAmountDetails obj = new Gson().fromJson(objJson, type);
 
-                String status = new PreviousBudgetAmountDetailsManager().Update(partyMasterObj, userid, id);
+                obj.setActualAmount(totalAmount);
+                boolean result = new PreviousBudgetAmountDetailsManager().update(obj, objId, loginUserId);
 
-                if (status.equalsIgnoreCase(ApplicationConstants.SUCCESS)) {
+                if (result == true) {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
-                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_SUCCESS));
-
-                } else if (status.equalsIgnoreCase(ApplicationConstants.FAIL)) {
+                    out.write(new Gson().toJson(result));
+                    logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsUpdate", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
+                } else {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
                     out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
-                    logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsUpdate", ApplicationConstants.UPDATE, ApplicationConstants.FAIL));
-
-                } else if (status.equalsIgnoreCase(ApplicationConstants.DUPLICATE)) {
-                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_DUPLICATE);
-                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_DUPLICATE));
-                    logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsUpdate", ApplicationConstants.UPDATE, ApplicationConstants.FAIL));
-
+                    logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsUpdate", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
                 }
-//                } else {
-//                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
-//                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
-//                }
 
             } else {
                 request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
                 out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));
-                logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsUpdate", ApplicationConstants.FAIL, ApplicationConstants.INVALID_SESSION));
+                logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsUpdate", ApplicationConstants.AUTHENTICATION, ApplicationConstants.INVALID_SESSION));
             }
         } catch (Exception ex) {
-
             request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_EXCEPTION);
             StringWriter stack = new StringWriter();
             ex.printStackTrace(new PrintWriter(stack));
-
             out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_EXCEPTION));
+            logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsUpdate", ApplicationConstants.AUTHENTICATION, ApplicationConstants.HTTP_STATUS_EXCEPTION));
         } finally {
             out.close();
         }

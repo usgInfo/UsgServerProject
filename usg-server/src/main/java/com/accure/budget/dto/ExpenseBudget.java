@@ -35,6 +35,33 @@ public class ExpenseBudget extends Common {
     private String sanctionedAmount;
     private String approvedAmount;
     private String isConsolidate;
+    private String isSanctioned;
+    private String isExtraProvisioned;
+    private String extraProvisionAmount;
+
+    public String getIsSanctioned() {
+        return isSanctioned;
+    }
+
+    public void setIsSanctioned(String isSanctioned) {
+        this.isSanctioned = isSanctioned;
+    }
+
+    public String getIsExtraProvisioned() {
+        return isExtraProvisioned;
+    }
+
+    public void setIsExtraProvisioned(String isExtraProvisioned) {
+        this.isExtraProvisioned = isExtraProvisioned;
+    }
+
+    public String getExtraProvisionAmount() {
+        return extraProvisionAmount;
+    }
+
+    public void setExtraProvisionAmount(String extraProvisionAmount) {
+        this.extraProvisionAmount = extraProvisionAmount;
+    }
 
     public String getApprovedAmount() {
         return approvedAmount;

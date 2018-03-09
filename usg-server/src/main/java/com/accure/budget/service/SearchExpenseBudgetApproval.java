@@ -10,9 +10,12 @@ import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
 import com.accure.usg.server.utils.Common;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Type;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -41,12 +44,16 @@ public class SearchExpenseBudgetApproval extends HttpServlet {
                 String finyear = request.getParameter("finyear");
                 String budgetHead = request.getParameter("budgetHead");
                 String location = request.getParameter("location");
+                String dept = request.getParameter("department");
+                Type type1 = new TypeToken<List<String>>() {
+                }.getType();
+                List<String> deptList = new Gson().fromJson(dept, type1);
                 ExpenseBudgetApprovalManager section = new ExpenseBudgetApprovalManager();
-                String resultJson = section.search(ddo, fundType, sector, finyear, budgetHead, location);
+                String resultJson = section.search(ddo, fundType, sector, finyear, budgetHead, location, deptList);
 
                 if (resultJson != null && !resultJson.isEmpty()) {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
-                     out.write((resultJson));
+                    out.write((resultJson));
                     logger.info(Common.getLogMsg("SearchDDOForBudgetExpense", ApplicationConstants.VIEW, ApplicationConstants.SUCCESS));
                 } else {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);

@@ -17,7 +17,15 @@ public class Period extends Common{
     private int totalPeriodDuration;
     private String durationType;
     private int totalNumberOfExams;
+    private String midSem;
 
+    public String getMidSem() {
+        return midSem;
+    }
+
+    public void setMidSem(String midSem) {
+        this.midSem = midSem;
+    }
     public String getPeriodName() {
         return periodName;
     }

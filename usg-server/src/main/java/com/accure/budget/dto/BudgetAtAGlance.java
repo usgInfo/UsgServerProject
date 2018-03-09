@@ -9,14 +9,15 @@ import com.accure.budget.manager.FinancialYearManager;
 import com.accure.finance.dto.ContraVoucher;
 import com.accure.finance.dto.LedgerList;
 import com.accure.finance.dto.PaymentVoucher;
-import com.accure.finance.manager.ChangeFinancialYearManager;
 import com.accure.finance.manager.TrialBalanceManager;
 import com.accure.usg.common.manager.RestClient;
 import com.accure.usg.server.utils.ApplicationConstants;
+import java.util.Objects;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,12 +29,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author user
  */
 public class BudgetAtAGlance {
+
+    private static Logger LOGGER = Logger.getLogger(BudgetAtAGlance.class);
 
     private String budgetHead;
 
@@ -303,9 +307,160 @@ public class BudgetAtAGlance {
             finalResult.put("financialYear", financialYearSelected);
 
         } catch (Exception exception) {
-            exception.printStackTrace();
+            LOGGER.error("getBudgetAtGlanceRecords", exception);
         }
         return finalResult;
+    }
+
+    public HashMap<String, Object> getBudgetAtGlanceRecords_v1(String createBudgetExpense) {
+
+        List<BudgetAtAGlance> budgetAtGlanceList = null;
+        HashMap<String, Object> finalResult = new HashMap();
+
+        try {
+
+            List<String> queryDocument = new ArrayList();
+
+            queryDocument.add("status=\"Active\"");
+            queryDocument.add("postingStatus=\"Posted\"");
+
+            HashMap<String, Object> queryFilterMap = new Gson().fromJson(createBudgetExpense,
+                    new TypeToken<HashMap<String, Object>>() {
+            }.getType());
+
+            String financialYearSelected = new FinancialYearManager().fetch(
+                    queryFilterMap.get("financialYearId") + "");
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+            String year = null;
+
+            if (financialYearSelected != null && financialYearSelected.length() > 0) {
+                HashMap<String, Object> financialYearMap = new Gson().fromJson(financialYearSelected,
+                        new TypeToken<HashMap<String, Object>>() {
+                }.getType());
+
+                year = financialYearMap.get("year") + "";
+                String fromDate = financialYearMap.get("fromDate") + "";
+                String toDate = financialYearMap.get("toDate") + "";
+
+                Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+                cal.setTime(dateFormat.parse(fromDate));
+                cal.add(Calendar.YEAR, -1);
+                long fromDateLong = cal.getTimeInMillis();
+
+                cal.setTime(dateFormat.parse(toDate));
+                cal.add(Calendar.YEAR, -1);
+                long toDateLong = cal.getTimeInMillis();
+
+                queryDocument.add("voucherDateInMilliSecond>=" + fromDateLong);
+                queryDocument.add("voucherDateInMilliSecond<=" + toDateLong);
+
+            }
+
+            this.headerList.add(BudgetHeaders.Budget_Head.getName());
+
+            HashMap<String, HashMap<String, HashMap>> budgetAtAGlanceMap = new HashMap();
+
+            PreviousBudgetAmountDetailsManager prevBudAmtDetails = new PreviousBudgetAmountDetailsManager();
+
+            HashMap<String, Object> queryFilterMap_1 = new HashMap(queryFilterMap);
+            Iterator<Map.Entry<String, Object>> mapItr = queryFilterMap_1.entrySet().iterator();
+            while (mapItr.hasNext()) {
+                Map.Entry<String, Object> entry = mapItr.next();
+                if (entry.getValue() == null || (entry.getValue() + "").isEmpty()) {
+                    mapItr.remove();
+                }
+            }
+
+            queryFilterMap_1.remove("financialYearId");
+            if (year != null) {
+                queryFilterMap_1.put("financialYear", year);
+            }
+
+            List<PreviousBudgetAmountDetails> prevBudAmtList = prevBudAmtDetails.
+                    getPreviousBudgetAmountDetails(queryFilterMap_1, year);
+            if (prevBudAmtList != null) {
+
+                putPrevBudgetAmountsIntoLedgers(prevBudAmtList, budgetAtAGlanceMap);
+
+            } else {
+
+                TrialBalanceManager trialBalanceManager = new TrialBalanceManager();
+                ArrayList paymentVoucherList = trialBalanceManager.getVoucherList(
+                        TrialBalanceManager.VoucherType.payment.toString(), queryDocument);
+                ArrayList contraVoucherList = trialBalanceManager.getVoucherList(
+                        TrialBalanceManager.VoucherType.contra.toString(), queryDocument);
+
+                getActualBudgetForVouchers(paymentVoucherList, budgetAtAGlanceMap,
+                        TrialBalanceManager.VoucherType.payment.toString());
+                getActualBudgetForVouchers(contraVoucherList, budgetAtAGlanceMap,
+                        TrialBalanceManager.VoucherType.contra.toString());
+
+            }
+
+            queryFilterMap.put("financialYearId", null);
+            queryFilterMap.put("ddo", null);
+
+            Set<Map.Entry<String, Object>> set = queryFilterMap.entrySet();
+
+            Iterator<Map.Entry<String, Object>> setIterator = set.iterator();
+            while (setIterator.hasNext()) {
+                Map.Entry<String, Object> entry = setIterator.next();
+                if (entry.getValue() == null || (entry.getValue() + "").equalsIgnoreCase("")) {
+                    setIterator.remove();
+                }
+            }
+
+            List<CreateBudgetExpense> budgetExpenseList = fetchBudgetExpenseTableRecords(queryFilterMap, year);
+            budgetAtGlanceList = addBudgetExpenseRecordsIntoBudgetHeadMap(
+                    budgetAtAGlanceMap, budgetExpenseList, financialYearSelected);
+
+            finalResult.put("result", budgetAtGlanceList);
+            finalResult.put("header", this.headerList);
+            finalResult.put("financialYear", financialYearSelected);
+
+        } catch (Exception exception) {
+            LOGGER.error("getBudgetAtGlanceRecords", exception);
+        }
+        return finalResult;
+    }
+
+    public void putPrevBudgetAmountsIntoLedgers(List<PreviousBudgetAmountDetails> prevBudAmtDetails,
+            HashMap<String, HashMap<String, HashMap>> budgetHeadMap) {
+
+        if (prevBudAmtDetails != null && budgetHeadMap != null) {
+            try {
+                NumberFormat nFormat = NumberFormat.getInstance();
+                for (PreviousBudgetAmountDetails prevBudAmt : prevBudAmtDetails) {
+
+                    if (budgetHeadMap.containsKey(prevBudAmt.getBudgetHead())) {
+                        HashMap<String, HashMap> ledgerMap = budgetHeadMap.get(prevBudAmt.getBudgetHead());
+                        if (ledgerMap.containsKey(prevBudAmt.getLedgerId())) {
+                            HashMap<String, Object> ledger = ledgerMap.get(prevBudAmt.getLedgerId());
+                            if (ledger.containsKey("amount")) {
+                                double amount = nFormat.parse(ledger.get("amount") + "").doubleValue();
+                                amount += nFormat.parse(prevBudAmt.getActualAmount()).doubleValue();
+                                ledger.put("amount", amount);
+                            }
+                        } else {
+                            HashMap<String, Object> amountMap = new HashMap();
+                            amountMap.put("amount", prevBudAmt.getActualAmount());
+                            ledgerMap.put(prevBudAmt.getLedgerId(), amountMap);
+                        }
+
+                    } else {
+                        HashMap<String, HashMap> ledgerMap = new HashMap();
+                        HashMap<String, Object> amountMap = new HashMap();
+                        amountMap.put("amount", prevBudAmt.getActualAmount());
+                        ledgerMap.put(prevBudAmt.getLedgerId(), amountMap);
+                        budgetHeadMap.put(prevBudAmt.getBudgetHead(), ledgerMap);
+                    }
+                }
+            } catch (ParseException parseException) {
+                LOGGER.error("putPrevBudgetAmountsIntoLedgers", parseException);
+            }
+        }
+
     }
 
     private void getActualBudgetForVouchers(ArrayList voucherList,
@@ -472,6 +627,75 @@ public class BudgetAtAGlance {
 
             }
 
+//            calculateSurplusDeficit(budgetAtGlanceList);
+        }
+        return budgetAtGlanceList;
+    }
+
+    private List<BudgetAtAGlance> addPreviousYearActualBudgetAmountIntoBudgetHeadMap(
+            HashMap<String, HashMap<String, HashMap>> budgetAtAGlanceMap,
+            List<PreviousBudgetAmountDetails> budgetAmountDetailsList, String selectedFinancialYear) throws Exception {
+
+        ArrayList<BudgetAtAGlance> budgetAtGlanceList = new ArrayList();
+        TreeSet budgetHeadSet = new TreeSet();
+
+        FinancialYear financialYear = null;
+        if (selectedFinancialYear != null) {
+            financialYear = ((FinancialYear) new Gson().fromJson(selectedFinancialYear,
+                    new TypeToken<FinancialYear>() {
+            }.getType()));
+        }
+
+        addHeader(BudgetHeaders.Actual_For, financialYear);
+        addHeader(BudgetHeaders.Budget_Estimate, financialYear);
+        addHeader(BudgetHeaders.Revised_Estimate, financialYear);
+        addHeader(BudgetHeaders.Future_Budget_Extimate, financialYear);
+
+        if (budgetAmountDetailsList.size() > 0) {
+
+            for (PreviousBudgetAmountDetails budgetAmount : budgetAmountDetailsList) {
+                String budgetHeadNameStr = budgetAmount.getBudgetHeadName();
+                String budgetHeadStr = budgetAmount.getBudgetHead();
+                BudgetAtAGlance budgetAtGlance = null;
+                List<LedgerWiseEstimate> ledgerWiseEstimateList = null;
+
+                if (budgetHeadSet.contains(budgetHeadStr)) {
+                    Iterator<BudgetAtAGlance> budgetAtGlanceListIterator = budgetAtGlanceList.iterator();
+                    while (budgetAtGlanceListIterator.hasNext()) {
+                        BudgetAtAGlance tempbudgetAtGlance = budgetAtGlanceListIterator.next();
+                        if (tempbudgetAtGlance.getBudgetHead() != null
+                                && tempbudgetAtGlance.getBudgetHead().equalsIgnoreCase(budgetHeadStr)) {
+                            budgetAtGlance = tempbudgetAtGlance;
+                            ledgerWiseEstimateList = budgetAtGlance.getLedgerWiseEstimate();
+                            break;
+                        }
+                    }
+                } else {
+                    budgetHeadSet.add(budgetHeadStr);
+                    budgetAtGlance = new BudgetAtAGlance();
+                    budgetAtGlance.setBudgetHead(budgetHeadStr);
+                    budgetAtGlance.setBudgetHeadName(budgetHeadNameStr);
+                    ledgerWiseEstimateList = new ArrayList();
+                    budgetAtGlance.setLedgerWiseEstimate(ledgerWiseEstimateList);
+                    budgetAtGlanceList.add(budgetAtGlance);
+                }
+
+                HashMap<String, HashMap> ledgerMap = null;
+
+                if (budgetAtAGlanceMap.containsKey(budgetHeadStr)) {
+                    ledgerMap = budgetAtAGlanceMap.get(budgetHeadStr);
+                }
+
+                if (ledgerMap == null) {
+                    ledgerMap = new HashMap();
+                }
+
+//                addbudgetExpenseToBudgetAtGlance(budgetExpense, ledgerMap, financialYear,
+//                        ledgerWiseEstimateList);
+//                addbudgetExpenseToBudgetAtGlance(budgetExpense, ledgerMap, financialYear,
+//                        ledgerWiseEstimateList);
+            }
+
             calculateSurplusDeficit(budgetAtGlanceList);
 
         }
@@ -525,7 +749,16 @@ public class BudgetAtAGlance {
 
         String sanctionedAmount = budgetExpense.getSanctionedAmount() == null ? "0.00"
                 : budgetExpense.getSanctionedAmount();
-        double amount = numberFormat.parse(sanctionedAmount).doubleValue();
+        String appropriationAmount = budgetExpense.getApprovedAmount() == null ? "0.00"
+                : budgetExpense.getApprovedAmount();
+        String extraProvisionAmount = budgetExpense.getExtraProvisionAmount() == null ? "0.00"
+                : budgetExpense.getExtraProvisionAmount();
+
+        double sanctionedamount = numberFormat.parse(sanctionedAmount).doubleValue();
+        double appropriationamount = numberFormat.parse(appropriationAmount).doubleValue();
+        double extraProvisionamount = numberFormat.parse(extraProvisionAmount).doubleValue();
+
+        sanctionedamount += appropriationamount + extraProvisionamount;
 
         if (budgetExpense.getFinancialYearId() != null && financialYear != null
                 && financialYear.getId() != null && (((LinkedTreeMap) financialYear.getId()).get("$oid") + "").
@@ -533,23 +766,116 @@ public class BudgetAtAGlance {
             if (budgetExpense.getBudgetTypeName().equalsIgnoreCase("Estimated")) {
 
                 if (ledgerWiseEstimate.getBudgetEstimate() != null) {
-                    amount += numberFormat.parse(ledgerWiseEstimate.getBudgetEstimate()).doubleValue();
+                    sanctionedamount += numberFormat.parse(ledgerWiseEstimate.getBudgetEstimate()).doubleValue();
                 }
-                ledgerWiseEstimate.setBudgetEstimate(String.format("%.2f", amount));
+                ledgerWiseEstimate.setBudgetEstimate(String.format("%.2f", sanctionedamount));
             } else if (budgetExpense.getBudgetTypeName().equalsIgnoreCase("Revised")) {
 
                 if (ledgerWiseEstimate.getRevisedEstimate() != null) {
-                    amount += numberFormat.parse(ledgerWiseEstimate.getRevisedEstimate()).doubleValue();
+                    sanctionedamount += numberFormat.parse(ledgerWiseEstimate.getRevisedEstimate()).doubleValue();
                 }
-                ledgerWiseEstimate.setRevisedEstimate(String.format("%.2f", amount));
+                ledgerWiseEstimate.setRevisedEstimate(String.format("%.2f", sanctionedamount));
             }
         } else {
 
             if (ledgerWiseEstimate.getFutureBudgetEstimate() != null) {
-                amount += numberFormat.parse(ledgerWiseEstimate.getFutureBudgetEstimate()).doubleValue();
+                sanctionedamount += numberFormat.parse(ledgerWiseEstimate.getFutureBudgetEstimate()).doubleValue();
             }
-            ledgerWiseEstimate.setFutureBudgetEstimate(String.format("%.2f", amount));
+            ledgerWiseEstimate.setFutureBudgetEstimate(String.format("%.2f", sanctionedamount));
         }
+
+        if (ledgerWiseEstimate.getAcutalFor() == null || ledgerWiseEstimate.
+                getAcutalFor().equalsIgnoreCase("null")) {
+            ledgerWiseEstimate.setAcutalFor("0.00");
+        }
+
+        if (ledgerWiseEstimate.getBudgetEstimate() == null || ledgerWiseEstimate.
+                getBudgetEstimate().equalsIgnoreCase("null")) {
+            ledgerWiseEstimate.setBudgetEstimate("0.00");
+        }
+        if (ledgerWiseEstimate.getRevisedEstimate() == null || ledgerWiseEstimate.
+                getRevisedEstimate().equalsIgnoreCase("null")) {
+            ledgerWiseEstimate.setRevisedEstimate("0.00");
+        }
+        if (ledgerWiseEstimate.getFutureBudgetEstimate() == null || ledgerWiseEstimate.
+                getFutureBudgetEstimate().equalsIgnoreCase("null")) {
+            ledgerWiseEstimate.setFutureBudgetEstimate("0.00");
+        }
+
+    }
+
+    private void addPreviousYearActualBudgetAmountToBudgetAtGlance(PreviousBudgetAmountDetails budgetAmount,
+            HashMap<String, HashMap> ledgerMap, FinancialYear financialYear,
+            List<LedgerWiseEstimate> ledgerWiseEstimateList) throws Exception {
+
+        String ledgerNameStr = budgetAmount.getLedger();
+        String ledgerId = budgetAmount.getLedgerId();
+        LedgerWiseEstimate ledgerWiseEstimate = null;
+
+        Iterator<LedgerWiseEstimate> ledgerWiseEstimateIterator = ledgerWiseEstimateList.iterator();
+        while (ledgerWiseEstimateIterator.hasNext()) {
+            LedgerWiseEstimate tempLedgerWiseEstimate = ledgerWiseEstimateIterator.next();
+            if (tempLedgerWiseEstimate.getLedgerId() != null && ledgerId != null
+                    && tempLedgerWiseEstimate.getLedgerId().equals(ledgerId)) {
+                ledgerWiseEstimate = tempLedgerWiseEstimate;
+                break;
+            }
+        }
+        if (ledgerWiseEstimate == null) {
+            ledgerWiseEstimate = new LedgerWiseEstimate();
+            ledgerWiseEstimateList.add(ledgerWiseEstimate);
+        }
+
+        ledgerWiseEstimate.setLedgerName(ledgerNameStr);
+        ledgerWiseEstimate.setLedgerId(ledgerId);
+        if (ledgerMap.containsKey(ledgerId)) {
+            HashMap<String, Object> amountMap = ledgerMap.get(ledgerId);
+            if (amountMap.containsKey("amount")) {
+                if (amountMap.get("amount") != null) {
+
+                    double amount = 0d;
+                    amount += numberFormat.parse(amountMap.get("amount") + "").doubleValue();
+
+                    if (ledgerWiseEstimate.getAcutalFor() != null
+                            && ledgerWiseEstimate.getAcutalFor().length() > 0) {
+
+                        amount += numberFormat.parse(ledgerWiseEstimate.getAcutalFor()).doubleValue();
+                        ledgerWiseEstimate.setAcutalFor(String.format("%.2f", amount));
+                    } else {
+                        ledgerWiseEstimate.setAcutalFor(String.format("%.2f", amount));
+                    }
+                }
+
+            }
+        }
+
+        String sanctionedAmount = budgetAmount.getActualAmount() == null ? "0.00"
+                : budgetAmount.getActualAmount();
+        double amount = numberFormat.parse(sanctionedAmount).doubleValue();
+
+        if (budgetAmount.getFinancialYear() != null && financialYear != null
+                && financialYear.getId() != null && (financialYear.getYear().
+                equalsIgnoreCase(budgetAmount.getFinancialYear()))) {
+//            if (budgetAmount.getBudgetTypeName().equalsIgnoreCase("Estimated")) {
+//
+//                if (ledgerWiseEstimate.getBudgetEstimate() != null) {
+//                    amount += numberFormat.parse(ledgerWiseEstimate.getBudgetEstimate()).doubleValue();
+//                }
+//                ledgerWiseEstimate.setBudgetEstimate(String.format("%.2f", amount));
+//            } else if (budgetExpense.getBudgetTypeName().equalsIgnoreCase("Revised")) {
+//
+//                if (ledgerWiseEstimate.getRevisedEstimate() != null) {
+//                    amount += numberFormat.parse(ledgerWiseEstimate.getRevisedEstimate()).doubleValue();
+//                }
+//                ledgerWiseEstimate.setRevisedEstimate(String.format("%.2f", amount));
+//            }
+        } //else {
+//
+//            if (ledgerWiseEstimate.getFutureBudgetEstimate() != null) {
+//                amount += numberFormat.parse(ledgerWiseEstimate.getFutureBudgetEstimate()).doubleValue();
+//            }
+//            ledgerWiseEstimate.setFutureBudgetEstimate(String.format("%.2f", amount));
+//        }
 
         if (ledgerWiseEstimate.getAcutalFor() == null || ledgerWiseEstimate.
                 getAcutalFor().equalsIgnoreCase("null")) {
@@ -645,7 +971,8 @@ public class BudgetAtAGlance {
                 + bet + "`";
 
         String budgetExpenseQuery = "select " + bet + ".budgetHead, " + bet + ".ddoName, "
-                + bet + ".sanctionedAmount, " + bet + ".budgetTypeName, "
+                + bet + ".sanctionedAmount, " + bet + ".appropriationValue, "
+                + bet + ".extraProvisionAmount, " + bet + ".budgetTypeName, "
                 + bet + ".ledgerName, " + bet + ".budgetHeadName, " + bet
                 + ".ledgerName, " + bet + ".financialYearId, " + bet
                 + ".budgetDate, " + bet + ".ledgerId from " + budgetExpenseTable + " as " + bet;

@@ -6,6 +6,7 @@
 package com.accure.budget.dto;
 
 import com.accure.usg.common.dto.Common;
+import java.util.List;
 
 /**
  *
@@ -18,6 +19,7 @@ public class HeadwiseIncomeBudget extends Common {
     private String location;
     private String financialYear;
     private String budgetCode;
+    private String budgetHeadName;
     private String fundType;
     private String budgetType;
     private String headDescription;
@@ -37,6 +39,7 @@ public class HeadwiseIncomeBudget extends Common {
     private String ledger;
     private String ledgerId;
     private String departmentName;
+    private List<String> departments;
 
     public String getConsolidatedIncomeId() {
         return consolidatedIncomeId;
@@ -238,6 +241,22 @@ public class HeadwiseIncomeBudget extends Common {
 
     public void setDepartmentName(String departmentName) {
         this.departmentName = departmentName;
+    }
+
+    public List<String> getDepartments() {
+        return departments;
+    }
+
+    public void setDepartments(List<String> departments) {
+        this.departments = departments;
+    }
+
+    public String getBudgetHeadName() {
+        return budgetHeadName;
+    }
+
+    public void setBudgetHeadName(String budgetHeadName) {
+        this.budgetHeadName = budgetHeadName;
     }
 
 }

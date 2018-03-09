@@ -6,6 +6,7 @@
 package com.accure.budget.service;
 
 import com.accure.budget.dto.BudgetAtAGlance;
+import com.accure.budget.dto.DeptWiseExpBudgetAllocation;
 import com.accure.budget.dto.ExpenseBudgetApproval;
 import com.accure.budget.manager.BudgetReAppropriationReportManager;
 import com.accure.finance.reportformat.CreatePDFFile;
@@ -62,13 +63,13 @@ Logger logger = Logger.getLogger(BudgetAtAGlanceService.class);
               String finYear = URLDecoder.decode(request.getParameter("finYear"));
             if (SessionManager.checkUserSession(session)) {
 
-                User currentUser = (User) session.getAttribute("user");
-                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
-                if (authorized) {
+//                User currentUser = (User) session.getAttribute("user");
+//                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
+//                if (authorized) {
                     ServletContext servletContext = getServletContext();
                     String path = File.separator + "usg" + File.separator + "images";
                     String contextPath = servletContext.getRealPath("/" + path); 
-                    List<ExpenseBudgetApproval> budExpenseBudgetApprovalList = null;
+                    List<DeptWiseExpBudgetAllocation> budExpenseBudgetApprovalList = null;
                    budExpenseBudgetApprovalList = new BudgetReAppropriationReportManager().
                             generateReApropriationBudgetReport(budgetExpenseStr);
                     ByteArrayOutputStream bos = new BudgetReAppropriationReportManager().generateBudgetReport(budExpenseBudgetApprovalList,
@@ -91,11 +92,11 @@ Logger logger = Logger.getLogger(BudgetAtAGlanceService.class);
                         logger.info(Common.getLogMsg("BudgetAtAGlanceService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
                     }
 
-                } else {
-                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
-//                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
-                    logger.info(Common.getLogMsg("BudgetAtAGlanceService", ApplicationConstants.FAIL, ApplicationConstants.UNAUTHORIZED_ACCESS));
-                }
+//                } else {
+//                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
+////                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
+//                    logger.info(Common.getLogMsg("BudgetAtAGlanceService", ApplicationConstants.FAIL, ApplicationConstants.UNAUTHORIZED_ACCESS));
+//                }
             } else {
                 request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
                 out.print(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_FAIL, ApplicationConstants.BANK_LIST_fAILED, null)));

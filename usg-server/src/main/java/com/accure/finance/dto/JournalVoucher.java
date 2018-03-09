@@ -48,6 +48,15 @@ public class JournalVoucher extends Common {
     private String postingStatus;
     private String postingDate;
     private String unPostingDate;
+    private String entryStatus;
+
+    public String getEntryStatus() {
+        return entryStatus;
+    }
+
+    public void setEntryStatus(String entryStatus) {
+        this.entryStatus = entryStatus;
+    }
 
     public String getVoucherName() {
         return voucherName;

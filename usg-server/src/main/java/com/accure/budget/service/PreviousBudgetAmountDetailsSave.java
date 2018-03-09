@@ -7,8 +7,6 @@ package com.accure.budget.service;
 
 import com.accure.budget.dto.PreviousBudgetAmountDetails;
 import com.accure.budget.manager.PreviousBudgetAmountDetailsManager;
-import com.accure.finance.dto.PartyMaster;
-import com.accure.finance.manager.PartyMasterManager;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
 import com.accure.usg.server.utils.Common;
@@ -18,6 +16,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
+import java.util.Iterator;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -46,55 +46,55 @@ public class PreviousBudgetAmountDetailsSave extends HttpServlet {
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter out = response.getWriter();
         try {
-            /* TODO output your page here. You may use following sample code. */
-          HttpSession session = request.getSession(false);
+            HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
-//                User currentUser = (User) session.getAttribute("user");
-//                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
-//                if (authorized) {
-                String preBudgetActualAmount = request.getParameter("preBudgetActualAmount");
-                String userid = request.getParameter("userId");
-                Type type = new TypeToken<PreviousBudgetAmountDetails>() {
-                }.getType();
 
-                PreviousBudgetAmountDetails pbad = new Gson().fromJson(preBudgetActualAmount, type);
-                String result = new PreviousBudgetAmountDetailsManager().Save(pbad, userid);
+                String objJson = request.getParameter("objJson");
+                String loginUserId = request.getParameter("userid");
+                String status = request.getParameter("status");
+                //System.out.println("loginUserId" + loginUserId + "--------status" + status);
+                //
+                List<PreviousBudgetAmountDetails> list = new Gson().fromJson(objJson, new TypeToken<List<PreviousBudgetAmountDetails>>() {
+                }.getType());
+                int count = list.size();
+                String result = "";
 
-                if (result.equalsIgnoreCase(ApplicationConstants.SUCCESS)) {
+                if (status.equals("Save")) {
+                    int resultCount = 0;
+                    for (Iterator<PreviousBudgetAmountDetails> iterator = list.iterator(); iterator.hasNext();) {
+                        PreviousBudgetAmountDetails next = iterator.next();
+
+                        if (new PreviousBudgetAmountDetailsManager().save(next, loginUserId) != "") {
+                            resultCount++;
+                        }
+                    }
+                    result = "false";
+                    if (resultCount == count) {
+                        result = "true";
+                    }
+                }
+
+                if (result != null && !result.isEmpty()) {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
                     out.write(new Gson().toJson(result));
                     logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
-                } else if (result.equalsIgnoreCase(ApplicationConstants.DUPLICATE)) {
-                    request.setAttribute("statuscode", ApplicationConstants.DUPLICATE);
-                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_DUPLICATE));
-                    logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
-                } else if (result.equalsIgnoreCase(ApplicationConstants.FAIL)) {
-                    request.setAttribute("statuscode", ApplicationConstants.FAIL);
+                } else {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
                     out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
                     logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
-                } else if (result.equalsIgnoreCase("null")) {
-                    request.setAttribute("statuscode", ApplicationConstants.FAIL);
-                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_NULL));
-                    logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
                 }
-//                } else {
-//                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
-//                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
-                //logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsSave", ApplicationConstants.FAIL, ApplicationConstants.INVALID_SESSION));
 
-//                }
             } else {
                 request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
                 out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));
-                logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsSave", ApplicationConstants.FAIL, ApplicationConstants.INVALID_SESSION));
+                logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.INVALID_SESSION));
             }
-
         } catch (Exception ex) {
             request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_EXCEPTION);
             StringWriter stack = new StringWriter();
             ex.printStackTrace(new PrintWriter(stack));
-            logger.error(Common.getLogMsg("PreviousBudgetAmountDetailsSave", ApplicationConstants.ERROR, stack.toString()));
             out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_EXCEPTION));
+            logger.info(Common.getLogMsg("PreviousBudgetAmountDetailsSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.HTTP_STATUS_EXCEPTION));
         } finally {
             out.close();
         }

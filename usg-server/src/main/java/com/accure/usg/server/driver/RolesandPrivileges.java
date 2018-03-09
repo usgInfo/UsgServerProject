@@ -162,7 +162,7 @@ public class RolesandPrivileges {
             "UpdateEmployee", "DeleteEmployee", "CreateEmployeeDemographics", "ViewEmployeeDemographics", "UpdateEmployeeDemographics", "DeleteEmployeeDemographics", "CreateEmployeeJob",
             "ViewEmployeeJob", "UpdateEmployeeJob", "DeleteEmployeeJob", "CreateEmployeeAssign", "ViewEmployeeAsign", "UpdateEmployeeAsign", "DeleteEmployeeAsign", "CreateEmployeeDetails",
             "ViewEmployeeDetails", "UpdateEmployeeDetails", "DeleteEmployeeDetails", "CreateEmployeeSalary", "ViewEmployeeSalary", "DeleteEmployeeSalary", "UpdateEmployeeSalary",
-            "ViewSalaryHeadAssign", "ChangeFinancialYear", "CreateLocation", "ViewLocation", "ViewUserList", "UpdateLocation", "DeleteLocation", "CreateDDO", "ViewDDO", "UpdateDDO", "DeleteDDO", "CreateDDOLocationMapping", "UpdateDDOLocationMapping", "DeleteDDOLocationMapping", "ViewDDOLocationMapping"};
+            "ViewSalaryHeadAssign", "ChangeFinancialYear", "CreateLocation", "ViewLocation", "ViewUserList", "UpdateLocation", "DeleteLocation", "CreateDDO", "ViewDDO", "UpdateDDO", "DeleteDDO", "CreateDDOLocationMapping", "UpdateDDOLocationMapping", "DeleteDDOLocationMapping", "ViewDDOLocationMapping","CreateGovernmentBudgetHead"};
 
         for (String privilegeName : privilegeNames) {
             //System.out.println("Privilege - " + privilegeName);
@@ -404,7 +404,7 @@ public class RolesandPrivileges {
             "UpdateLocationBudgetAllocation", "DeleteLocationBudgetAllocation", "CreateBudgetExpenses", "ViewBudgetExpenses", "UpdateBudgetExpenses", "DeleteBudgetExpenses",
             "CreateBudgetConsolidatedExpenses", "ViewBudgetConsolidatedExpenses", "UpdateBudgetConsolidatedExpenses", "DeleteBudgetConsolidatedExpenses", "CreateBugetExpensesUniversity",
             "ViewBugetExpensesUniversity", "UpdateBugetExpensesUniversity", "DeleteBugetExpensesUniversity", "ViewLocationWiseExpenseBudget", "ViewBudgetApprovalDDO",
-            "ViewBudgetReAppropriation", "BudgetReportView", "ChangeFinancialYear"};
+            "ViewBudgetReAppropriation", "BudgetReportView", "ChangeFinancialYear","CreateGovernmentBudgetHead"};
 
         for (String privilegeName : privilegeNames) {
             //System.out.println("Privilege - " + privilegeName);

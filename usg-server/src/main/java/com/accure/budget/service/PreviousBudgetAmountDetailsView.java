@@ -25,7 +25,9 @@ import org.apache.log4j.Logger;
  * @author user
  */
 public class PreviousBudgetAmountDetailsView extends HttpServlet {
+
     Logger logger = Logger.getLogger(PreviousBudgetAmountDetailsView.class);
+
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -41,14 +43,20 @@ public class PreviousBudgetAmountDetailsView extends HttpServlet {
         PrintWriter out = response.getWriter();
         try {
             /* TODO output your page here. You may use following sample code. */
-           HttpSession session = request.getSession(false);
+            HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
 
+                String fundType = request.getParameter("fundType");
+                String budgetHead = request.getParameter("budgetHead");
+                String budgetType = request.getParameter("budgetType");
                 String ddo = request.getParameter("ddo");
                 String location = request.getParameter("location");
-                String year=request.getParameter("year");
-
-                String resultJson = new PreviousBudgetAmountDetailsManager().View(ddo, location,year);
+                String financialYear = request.getParameter("financialYear");
+                String sector = request.getParameter("sector");
+                String department = request.getParameter("department");
+                String type = request.getParameter("type");
+                PreviousBudgetAmountDetailsManager asstn = new PreviousBudgetAmountDetailsManager();
+                String resultJson = asstn.View(fundType, budgetHead, budgetType, ddo, location, financialYear, sector, department, type);
 
                 if (resultJson != null && !resultJson.isEmpty()) {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);

@@ -1,7 +1,7 @@
 package com.accure.user.manager;
 
-import com.accure.user.manager.UserManager;
 import com.accure.accure.security.Security;
+import com.accure.user.manager.UserManager;
 import com.accure.user.dto.User;
 import com.accure.usg.server.utils.ApplicationConstants;
 
@@ -19,6 +19,7 @@ public class AuthenticationManager {
         HashMap<String, String> conditionMap = new HashMap<String, String>();
         conditionMap.put(ApplicationConstants.USER_LOGIN_ID, userId);
         conditionMap.put(ApplicationConstants.USER_PASSWORD, Security.encryptPassword(password));
+//        conditionMap.put(ApplicationConstants.USER_PASSWORD, password);
         conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
         List<User> users = new UserManager().getUserByCondition(conditionMap);
         if (users != null && users.size() > 0) {

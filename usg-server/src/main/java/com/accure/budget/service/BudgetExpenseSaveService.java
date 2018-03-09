@@ -58,11 +58,12 @@ public class BudgetExpenseSaveService extends HttpServlet {
                     String year = request.getParameter("year");
                     String ddo = request.getParameter("ddo");
                     String location = request.getParameter("location");
+                    String budgetType = request.getParameter("budgetType");
 
                     List<CreateBudgetExpense> list = new Gson().fromJson(objJson, new TypeToken<List<CreateBudgetExpense>>() {
                     }.getType());
                     String result = null;
-                    String newSlno = new BudgetExpenseManager().getSlNumber(year,ddo,location);
+                    String newSlno = new BudgetExpenseManager().getSlNumber(year,ddo,location,budgetType);
                     for (CreateBudgetExpense cl : list) {
 
                         result = new BudgetExpenseManager().save(cl, newSlno);

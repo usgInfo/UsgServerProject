@@ -3,13 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.accure.budget.service;
 
 import com.accure.budget.dto.ExpenseBudgetApproval;
-import com.accure.budget.dto.HeadwiseIncomeBudget;
 import com.accure.budget.manager.ExpenseBudgetApprovalManager;
-import com.accure.budget.manager.SearchBudgetHeadManager;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
 import com.accure.usg.server.utils.Common;
@@ -19,6 +16,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -44,10 +42,14 @@ public class ExpenseBudpprovalSearch extends HttpServlet {
             if (SessionManager.checkUserSession(session)) {
 
                 String searchObj = request.getParameter("searchObj");
+                String dept = request.getParameter("department");
+                Type type1 = new TypeToken<List<String>>() {
+                }.getType();
+                List<String> deptList = new Gson().fromJson(dept, type1);
                 Type type = new TypeToken<ExpenseBudgetApproval>() {
                 }.getType();
                 ExpenseBudgetApproval fc = new Gson().fromJson(searchObj, type);
-                String result = new ExpenseBudgetApprovalManager().searchData(fc);
+                String result = new ExpenseBudgetApprovalManager().searchData(fc,deptList);
 
                 if (result != null && !result.isEmpty()) {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);

@@ -25,6 +25,15 @@ public class Ledger extends Common {
     private String ledgerMapping;
     private String prevReqAmount;
 
+    public String getRequestAmount() {
+        return requestAmount;
+    }
+
+    public void setRequestAmount(String requestAmount) {
+        this.requestAmount = requestAmount;
+    }
+    private String requestAmount;
+
 //    for only table purpose
     private String underGroupName;
     private String fundTypeName;

@@ -9,6 +9,7 @@ import com.accure.budget.dto.BudgetSector;
 import com.accure.budget.dto.BudgetType;
 import com.accure.budget.dto.CreateBudgetExpense;
 import com.accure.budget.dto.FinancialYear;
+import com.accure.budget.dto.PreviousBudgetAmountDetails;
 import com.accure.finance.dto.DDO;
 import com.accure.finance.dto.Ledger;
 import com.accure.hrms.dto.BudgetHeadMaster;
@@ -32,11 +33,13 @@ public class BudgetExpenseManager {
     public String getLedgersBasedOnHeads(String fundType, String budgetHead, String budgetType, String location, String finacialYear, String ddo, String department) throws Exception {
         HashMap<String, String> conditionMap = new HashMap<String, String>();
         HashMap<String, String> conditionMap2 = new HashMap<String, String>();
+        int finYear = Integer.parseInt(finacialYear) - 1;
+        String prevFinYear = Integer.toString(finYear);
         conditionMap.put("FundType", fundType);
         if (budgetHead != "" && budgetHead != null) {
             conditionMap.put("budgetHeadCode", budgetHead);
         }
-         conditionMap.put("budgetType", "Yes");
+        conditionMap.put("budgetType", "Yes");
         String budgettypeName = "";
         String result = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.LEDGER_TABLE, conditionMap);
         List<Ledger> ddoList = new Gson().fromJson(result, new TypeToken<List<Ledger>>() {
@@ -48,10 +51,28 @@ public class BudgetExpenseManager {
             budgettypeName = BudgetTypeList.get(0).getDescription();
         }
         List<Ledger> headlist = new ArrayList<Ledger>();
+        String prrviousBudgetCon = "notRequired";
+        if (budgettypeName.equals("Estimated") || budgettypeName.equals("Revised")) {
+            HashMap<String, String> map = new HashMap<String, String>();
 
+            map.put("ddo", ddo);
+            map.put("location", location);
+            map.put("financialYear", prevFinYear);
+            map.put("fundType", fundType);
+//            map.put("ledgerId", ((LinkedTreeMap<String, String>) ledger.getId()).get("$oid"));
+            map.put("department", department);
+            map.put("budgetNature", "Expense");
+            map.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+
+            String prviousActualbudget = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.PREVIOUS_BUDGET_AMOUNT_DETAILS, map);
+            if (prviousActualbudget != null) {
+                prrviousBudgetCon = "Required";
+            }
+        }
         if (ddoList != null) {
             conditionMap.clear();
             for (Ledger ledger : ddoList) {
+                String revStatus = "required";
 //                        if(budgettypeName.equals("Estimated"))
 //                        {
                 conditionMap2.put("ddo", ddo);
@@ -69,15 +90,19 @@ public class BudgetExpenseManager {
                 }
 //                        }
                 if (budgettypeName.equals("Revised")) {
+                    conditionMap.put("ddo", ddo);
                     conditionMap.put("fundType", fundType);
                     if (budgetHead != "" && budgetHead != null) {
                         conditionMap.put("budgetHead", budgetHead);
                     }
-                    conditionMap.put("budgetHead", budgetHead);
                     conditionMap.put("ledgerId", ((LinkedTreeMap<String, String>) ledger.getId()).get("$oid"));
                     conditionMap.put("budgetTypeName", "Estimated");
                     conditionMap.put("location", location);
+                    conditionMap.put("department", department);
                     conditionMap.put("financialYear", finacialYear);
+//                    BasicDBObject reqCon = new BasicDBObject();
+//                    reqCon.put("$ne", 0);
+//                    conditionMap.put("requestedAmount", reqCon);
                     conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
                     ////System.out.println("--conditionMap--" + conditionMap);
                     String budgetJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.BUDGET_EXPENSE_TABLE, conditionMap);
@@ -85,11 +110,20 @@ public class BudgetExpenseManager {
                     if (budgetJson != null) {
                         List<CreateBudgetExpense> ledgerList = new Gson().fromJson(budgetJson, new TypeToken<List<CreateBudgetExpense>>() {
                         }.getType());
-                        String requestedAmount = ledgerList.get(0).getSanctionedAmount();
-                        if (requestedAmount == null) {
-                            requestedAmount = "0";
+                        String actualamount = "0";
+                        //  int reqAmountint = Integer.parseInt(ledgerList.get(0).getSanctionedAmount()) + Integer.parseInt(ledgerList.get(0).getExtraProvisionAmount());
+
+//                        String reqAmount = Integer.toString(reqAmountint);
+                        String reqAmount = ledgerList.get(0).getRequestedAmount();
+                        if (actualamount == null) {
+                            actualamount = "0";
                         }
-                        ledger.setPrevReqAmount(requestedAmount);
+                        if (reqAmount.equalsIgnoreCase("0")) {
+                            revStatus = "notRequired";
+                        }
+
+                        ledger.setPrevReqAmount(actualamount);
+                        ledger.setRequestAmount("0");
                     } else {
                         continue;
                     }
@@ -110,10 +144,12 @@ public class BudgetExpenseManager {
                         List<CreateBudgetExpense> ledgerList = new Gson().fromJson(budgetJson, new TypeToken<List<CreateBudgetExpense>>() {
                         }.getType());
                         String requestedAmount = ledgerList.get(0).getRequestedAmount();
+                        String requestAmount = ledgerList.get(0).getRequestedAmount();
                         if (requestedAmount == null) {
                             requestedAmount = "0";
                         }
                         ledger.setPrevReqAmount(requestedAmount);
+                        ledger.setRequestAmount(requestAmount);
                     } else {
                         continue;
                     }
@@ -126,12 +162,33 @@ public class BudgetExpenseManager {
                         ledger.setBudgetHeadName(gisList.get(0).getBudgetHead());
                     }
                 }
+                //get actual amount
+                if (prrviousBudgetCon.equalsIgnoreCase("Required")) {
+                    HashMap<String, String> map = new HashMap<String, String>();
+
+                    map.put("ddo", ddo);
+                    map.put("location", location);
+                    map.put("financialYear", prevFinYear);
+                    map.put("fundType", fundType);
+                    map.put("ledgerId", ((LinkedTreeMap<String, String>) ledger.getId()).get("$oid"));
+                    map.put("department", department);
+                    map.put("budgetNature", "Expense");
+                    map.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+
+                    String prviousActualbudget = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.PREVIOUS_BUDGET_AMOUNT_DETAILS, map);
+                    if (prviousActualbudget != null) {
+                        List<PreviousBudgetAmountDetails> ledgerList = new Gson().fromJson(prviousActualbudget, new TypeToken<List<PreviousBudgetAmountDetails>>() {
+                        }.getType());
+                        String actualAmt = ledgerList.get(0).getActualAmount();
+                        ledger.setPrevReqAmount(actualAmt);
+                    }
+                }
                 HashMap<String, String> conditionMap1 = new HashMap<String, String>();
                 conditionMap1.put("parentLedger", ((LinkedTreeMap<String, String>) ledger.getId()).get("$oid"));
                 conditionMap1.put("ledgerCategory", "Expense");
                 conditionMap1.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
                 String budgetJson11 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.LEDGER_CATEGORY_TABLE, conditionMap1);
-                if (budgetJson11 != null) {
+                if (budgetJson11 != null && revStatus.equalsIgnoreCase("required")) {
                     headlist.add(ledger);
                 }
             }
@@ -195,7 +252,9 @@ public class BudgetExpenseManager {
             ////System.out.println("----------------fyId-------" + fyId);
             expbudgetDTO.setFinancialYearId(fyId);
         }
+        expbudgetDTO.setAppropriationValue("0");
         expbudgetDTO.setExtraProvisionAmount("0");
+        expbudgetDTO.setSanctionedAmount("0");
         expbudgetDTO.setIsExtraProvisioned("false");
         String expbudgetJson = new Gson().toJson(expbudgetDTO);
         String expbudgetJsonresult = DBManager.getDbConnection().insert(ApplicationConstants.BUDGET_EXPENSE_TABLE, expbudgetJson);
@@ -252,6 +311,7 @@ public class BudgetExpenseManager {
         List<CreateBudgetExpense> ledgerList = new Gson().fromJson(budgetJson, new TypeToken<List<CreateBudgetExpense>>() {
         }.getType());
         int extraProvisionamount = 0;
+        int sanctionAmount = 0;
         for (CreateBudgetExpense incomeBudget : ledgerList) {
             String budgetHead = incomeBudget.getBudgetHead();
             String budgetTtypeName = incomeBudget.getBudgetTypeName();
@@ -259,17 +319,34 @@ public class BudgetExpenseManager {
             String finanYear = incomeBudget.getFinancialYear();
             String dept = incomeBudget.getDepartment();
             int amount = Integer.parseInt(incomeBudget.getRequestedAmount());
+            if (Integer.parseInt(incomeBudget.getSanctionedAmount()) != 0) {
+                amount = Integer.parseInt(incomeBudget.getSanctionedAmount());
+                incomeBudget.setRequestedAmount(String.valueOf(amount));
+//                if (Integer.parseInt(incomeBudget.getExtraProvisionAmount()) != 0) {
+//                    amount = amount + Integer.parseInt(incomeBudget.getExtraProvisionAmount());
+//                }
+
+            }
             String srno = incomeBudget.getSrNo();
             try {
                 extraProvisionamount = Integer.parseInt(incomeBudget.getExtraProvisionAmount());
             } catch (Exception e) {
 
             }
+            try {
+                sanctionAmount = Integer.parseInt(incomeBudget.getSanctionedAmount());
+            } catch (Exception ex) {
+            }
             String key = budgetTtypeName + budgetddo + dept + finanYear;
             if (objmap.containsKey(key)) {
                 CreateBudgetExpense mapObj = (CreateBudgetExpense) objmap.get(key);
                 int headWiseAmount = amount + Integer.parseInt(mapObj.getRequestedAmount());
                 int headWiseextraAmount = extraProvisionamount + Integer.parseInt(mapObj.getExtraProvisionAmount());
+                try {
+                    int headWiseSanctAmount = sanctionAmount + Integer.parseInt(mapObj.getSanctionedAmount());
+                    mapObj.setSanctionedAmount(String.valueOf(headWiseSanctAmount));
+                } catch (Exception ex) {
+                }
                 mapObj.setRequestedAmount(String.valueOf(headWiseAmount));
                 mapObj.setExtraProvisionAmount(String.valueOf(headWiseextraAmount));
 
@@ -322,7 +399,7 @@ public class BudgetExpenseManager {
         if (budgetJson1 != null) {
             List<CreateBudgetExpense> ledgerList = new Gson().fromJson(budgetJson1, new TypeToken<List<CreateBudgetExpense>>() {
             }.getType());
-               Collections.sort(ledgerList, new SortByLedgersInExpense());
+            Collections.sort(ledgerList, new SortByLedgersInExpense());
             return new Gson().toJson(ledgerList);
         }
         return new Gson().toJson(ApplicationConstants.NO_DATA_FOUND);
@@ -501,11 +578,12 @@ public class BudgetExpenseManager {
         return result;
     }
 
-    public String fetchAllBasedOnFinancialYear(String year, String ddo, String location) throws Exception {
+    public String fetchAllBasedOnFinancialYear(String year, String ddo, String location, String budgetType) throws Exception {
         HashMap<String, String> conditionMap = new HashMap<String, String>();
         conditionMap.put("financialYear", year);
         conditionMap.put("ddo", ddo);
         conditionMap.put("location", location);
+        conditionMap.put("budgetType", budgetType);
         conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
         String budgetJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.BUDGET_EXPENSE_TABLE, conditionMap);
         List<CreateBudgetExpense> ledgerList = new Gson().fromJson(budgetJson, new TypeToken<List<CreateBudgetExpense>>() {
@@ -527,8 +605,8 @@ public class BudgetExpenseManager {
         return finalresult;
     }
 
-    public String getSlNumber(String year, String ddo, String location) throws Exception {
-        String result = new BudgetExpenseManager().fetchAllBasedOnFinancialYear(year, ddo, location);
+    public String getSlNumber(String year, String ddo, String location, String budgetType) throws Exception {
+        String result = new BudgetExpenseManager().fetchAllBasedOnFinancialYear(year, ddo, location, budgetType);
         List<CreateBudgetExpense> loanApplyList = new Gson().fromJson(result, new TypeToken<List<CreateBudgetExpense>>() {
         }.getType());
         int numb = 0;
@@ -559,6 +637,7 @@ public class BudgetExpenseManager {
         String ddo = createIncomeBudgetObj.getDdo();
         String location = createIncomeBudgetObj.getLocation();
         String fundType = createIncomeBudgetObj.getFundType();
+        String department = createIncomeBudgetObj.getDepartment();
         String budgetTypeName = "";
         if (budgetType != null) {
             String budgetTypeJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_TYPE_TABLE, budgetType);
@@ -576,6 +655,9 @@ public class BudgetExpenseManager {
             conditionMap.put("location", location);
             conditionMap.put("financialYear", finYear);
             conditionMap.put("ddo", ddo);
+            if (department != null && department != "") {
+                conditionMap.put("department", department);
+            }
             String budgetJson = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.BUDGET_EXPENSE_TABLE, conditionMap);
             ////System.out.println("--budgetJson--" + budgetJson);
             if (budgetJson != null) {
@@ -621,7 +703,19 @@ public class BudgetExpenseManager {
         String result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.BUDGET_EXPENSE_TABLE, conditionMap);
         List<CreateBudgetExpense> list = new Gson().fromJson(result1, new TypeToken<List<CreateBudgetExpense>>() {
         }.getType());
-        return new Gson().toJson(list);
+        List<CreateBudgetExpense> finallist = new ArrayList<CreateBudgetExpense>();
+        for (CreateBudgetExpense expenseBudget : list) {
+            HashMap<String, String> conditionMap1 = new HashMap<String, String>();
+            conditionMap1.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+            conditionMap1.put("incomeBudgetId", ((LinkedTreeMap<String, String>) expenseBudget.getId()).get("$oid"));
+            String resultextra = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.EXTRA_PROVISION_EXPENSE, conditionMap1);
+            List<CreateBudgetExpense> listExtra = new Gson().fromJson(resultextra, new TypeToken<List<CreateBudgetExpense>>() {
+            }.getType());
+            if (listExtra == null || listExtra.size() < 1) {
+                finallist.add(expenseBudget);
+            }
+        }
+        return new Gson().toJson(finallist);
 
     }
 }

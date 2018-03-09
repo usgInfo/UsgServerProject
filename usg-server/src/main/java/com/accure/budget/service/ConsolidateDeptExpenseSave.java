@@ -6,11 +6,8 @@
 package com.accure.budget.service;
 
 import com.accure.budget.dto.ConsolidateDepartmentExpence;
-import com.accure.budget.dto.ConsolidateDepartmentIncome;
 import com.accure.budget.manager.ConsolidateDeptExpenseManager;
-import com.accure.budget.manager.ConsolidateDeptIncomeManager;
 import com.accure.budget.manager.ConsolidateExpenseBudgetManager;
-import com.accure.budget.manager.ConsolidateIncomeBudgetManager;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.SessionManager;
@@ -67,7 +64,7 @@ public class ConsolidateDeptExpenseSave extends HttpServlet {
                     String finyear = request.getParameter("financialYear");
                     String fundType = request.getParameter("fundType");
                     String sector = request.getParameter("sector");
-                    String budgetHead = request.getParameter("budgetHead");
+                    String budgetType = request.getParameter("budgetType");
                     String department = request.getParameter("department");
                     User user = new UserManager().fetch(loginUserId);
                     String userName = user.getFname() + " " + user.getLname();
@@ -76,7 +73,7 @@ public class ConsolidateDeptExpenseSave extends HttpServlet {
                     }.getType());
                     int count = list.size();
                     int resultCount = 0;
-                    String newSlno = new ConsolidateExpenseBudgetManager().getSlNumber(finyear, fundType, sector, budgetHead);
+                    String newSlno = new ConsolidateDeptExpenseManager().getSlNumber(finyear, fundType, sector, budgetType);
                     for (Iterator<ConsolidateDepartmentExpence> iterator = list.iterator(); iterator.hasNext();) {
                         ConsolidateDepartmentExpence next = iterator.next();
 
@@ -102,7 +99,7 @@ public class ConsolidateDeptExpenseSave extends HttpServlet {
                         out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
                         logger.info(Common.getLogMsg("ConsolidateDeptExpenseSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
                     }
-                } else {
+            } else {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
                     out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
                     logger.info(Common.getLogMsg("ConsolidateDeptExpenseSave", ApplicationConstants.FAIL, ApplicationConstants.UNAUTHORIZED_ACCESS));

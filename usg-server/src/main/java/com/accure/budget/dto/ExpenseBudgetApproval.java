@@ -6,6 +6,7 @@
 package com.accure.budget.dto;
 
 import com.accure.usg.common.dto.Common;
+import java.util.List;
 
 /**
  *
@@ -36,6 +37,7 @@ public class ExpenseBudgetApproval extends Common {
     private String consolidateBudgetStatus;
     private String incomeBudgetId;
     private String department;
+    private List<String> departments;
 
     public String getDepartment() {
         return department;
@@ -219,5 +221,13 @@ public class ExpenseBudgetApproval extends Common {
 
     public void setIncomeBudgetId(String incomeBudgetId) {
         this.incomeBudgetId = incomeBudgetId;
+    }
+
+    public List<String> getDepartments() {
+        return departments;
+    }
+
+    public void setDepartments(List<String> departments) {
+        this.departments = departments;
     }
 }

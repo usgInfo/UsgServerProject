@@ -114,7 +114,7 @@ public class LedgerCodeManager {
         return ledgerList;
     }
 
-     public List<Map<String, String>> fetchAll() throws Exception {
+    public List<Map<String, String>> fetchAll() throws Exception {
         List<Map<String, String>> outlist = new ArrayList<Map<String, String>>();
 
         DAO dao = DBManager.getDbConnection();
@@ -125,60 +125,20 @@ public class LedgerCodeManager {
         List<LedgerCodeMaster> ledgerList = new Gson().fromJson(budgetNatureJson, new TypeToken<List<LedgerCodeMaster>>() {
         }.getType());
         for (LedgerCodeMaster li : ledgerList) {
-            String ledgerName="";
+            String ledgerName = "";
             if ((li.getGovernmentLedgerCode() != null)) {
-                    String jsonStr = DBManager.getDbConnection().fetch(ApplicationConstants.LEDGER_TABLE, li.getGovernmentLedgerCode());
+                String jsonStr = DBManager.getDbConnection().fetch(ApplicationConstants.LEDGER_TABLE, li.getGovernmentLedgerCode());
 
-                    if (jsonStr != null) {
+                if (jsonStr != null) {
 
-                        List<Ledger> list = new Gson().fromJson(jsonStr, new TypeToken<List<Ledger>>() {
-                        }.getType());
+                    List<Ledger> list = new Gson().fromJson(jsonStr, new TypeToken<List<Ledger>>() {
+                    }.getType());
 
-                        Ledger ddoObj = list.get(0);
-                        ledgerName=ddoObj.getLedgerName();
-                       
-                    }
+                    Ledger ddoObj = list.get(0);
+                    ledgerName = ddoObj.getLedgerName();
+
                 }
-
-            HashMap<String, String> map = new HashMap<String, String>();
-
-            map.put("idStr", li.getGovernmentLedgerCode());
-            map.put("ledgerCode", li.getLedgerCode());
-            map.put("ledgerName", ledgerName);
-
-            outlist.add(map);
-
-        }
-
-        return outlist;
-    }
-     
-     public List<Map<String, String>> fetchAllLedgerForBudget() throws Exception {
-        List<Map<String, String>> outlist = new ArrayList<Map<String, String>>();
-
-        DAO dao = DBManager.getDbConnection();
-        HashMap<String, String> conditionMap = new HashMap<String, String>();
-        conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
-        conditionMap.put(ApplicationConstants.BUDGET_HEAD, ApplicationConstants.YES);
-        String budgetNatureJson = dao.fetchAllRowsByConditions(ApplicationConstants.LEDGER_CODE_TABLE, conditionMap);
-
-        List<LedgerCodeMaster> ledgerList = new Gson().fromJson(budgetNatureJson, new TypeToken<List<LedgerCodeMaster>>() {
-        }.getType());
-        for (LedgerCodeMaster li : ledgerList) {
-            String ledgerName="";
-            if ((li.getGovernmentLedgerCode() != null)) {
-                    String jsonStr = DBManager.getDbConnection().fetch(ApplicationConstants.LEDGER_TABLE, li.getGovernmentLedgerCode());
-
-                    if (jsonStr != null) {
-
-                        List<Ledger> list = new Gson().fromJson(jsonStr, new TypeToken<List<Ledger>>() {
-                        }.getType());
-
-                        Ledger ddoObj = list.get(0);
-                        ledgerName=ddoObj.getLedgerName();
-                       
-                    }
-                }
+            }
 
             HashMap<String, String> map = new HashMap<String, String>();
 
@@ -193,8 +153,49 @@ public class LedgerCodeManager {
         return outlist;
     }
 
+    public List<Map<String, String>> fetchAllLedgerForBudget() throws Exception {
+        List<Map<String, String>> outlist = new ArrayList<Map<String, String>>();
 
-   
+        DAO dao = DBManager.getDbConnection();
+        HashMap<String, String> conditionMap = new HashMap<String, String>();
+        conditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        conditionMap.put(ApplicationConstants.BUDGET_HEAD,"YES");
+        String budgetNatureJson = dao.fetchAllRowsByConditions(ApplicationConstants.LEDGER_CODE_TABLE, conditionMap);
+        if (budgetNatureJson != null) {
+            List<LedgerCodeMaster> ledgerList = new Gson().fromJson(budgetNatureJson, new TypeToken<List<LedgerCodeMaster>>() {
+            }.getType());
+            for (LedgerCodeMaster li : ledgerList) {
+                String ledgerName = "";
+                if ((li.getGovernmentLedgerCode() != null)) {
+                    String jsonStr = DBManager.getDbConnection().fetch(ApplicationConstants.LEDGER_TABLE, li.getGovernmentLedgerCode());
+
+                    if (jsonStr != null) {
+
+                        List<Ledger> list = new Gson().fromJson(jsonStr, new TypeToken<List<Ledger>>() {
+                        }.getType());
+
+                        Ledger ddoObj = list.get(0);
+                        ledgerName = ddoObj.getLedgerName();
+
+                    }
+                }
+
+                HashMap<String, String> map = new HashMap<String, String>();
+
+                map.put("idStr", li.getGovernmentLedgerCode());
+                map.put("ledgerCode", li.getLedgerCode());
+                map.put("ledgerName", ledgerName);
+
+                outlist.add(map);
+
+            }
+        } else {
+            return null;
+        }
+
+        return outlist;
+    }
+
     public static List<LedgerCodeMaster> getLedgerName(List<LedgerCodeMaster> list) throws Exception {
         Map<String, String> map = new HashMap<String, String>();
         String result = DBManager.getDbConnection().fetchAll(ApplicationConstants.LEDGER_TABLE);
@@ -335,7 +336,7 @@ public class LedgerCodeManager {
     }
 
     public static void main(String[] args) throws Exception {
-        List<Map<String,String>> result = new LedgerCodeManager().fetchAll();
+        List<Map<String, String>> result = new LedgerCodeManager().fetchAll();
         System.out.println("final result" + result);
     }
 

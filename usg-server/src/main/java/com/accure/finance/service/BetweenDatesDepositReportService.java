@@ -44,8 +44,8 @@ public class BetweenDatesDepositReportService extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.setHeader("Content-Disposition", "inline; filename=\"BankBookReport.pdf\"");
-        response.setContentType("application/pdf;charset=UTF-8;name=\"BankBookReport.pdf\"");
+        response.setHeader("Content-Disposition", "inline; filename=\"BetweenDaysDepositReport.pdf\"");
+        response.setContentType("application/pdf;charset=UTF-8;name=\"BetweenDaysDepositReport.pdf\"");
         ServletOutputStream out = response.getOutputStream();
         try {
 
@@ -54,13 +54,14 @@ public class BetweenDatesDepositReportService extends HttpServlet {
             String fromDate = request.getParameter("fromDate");
             String toDate = request.getParameter("toDate");
             String fin = URLDecoder.decode(request.getParameter("fin"));
+            String currentYear = request.getParameter("currentYear");
 //            String voucherdata = request.getParameter("voucherList");
            String voucherdata = URLDecoder.decode(request.getParameter("voucherList"));
             String ledger = request.getParameter("ledger");
            ServletContext servletContext = getServletContext();
             String path=File.separator+"usg"+File.separator+"images";
             String contextPath = servletContext.getRealPath("/"+path);
-            ByteArrayOutputStream baos = new BetweenDatesDepositManager().betweenDatesDepositReportPdfStatement(fromDate, toDate, voucherdata, ledger, contextPath, fin);
+            ByteArrayOutputStream baos = new BetweenDatesDepositManager().betweenDatesDepositReportPdfStatement(fromDate, toDate, voucherdata, ledger, contextPath, fin, currentYear);
             if (baos != null) {
                 PDFMergerUtility ut = new PDFMergerUtility();
                 ut.addSource(new ByteArrayInputStream(baos.toByteArray()));

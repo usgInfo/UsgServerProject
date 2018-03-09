@@ -35,6 +35,15 @@ public class LedgerList extends Common {
     private Long chequeDateInMilliSecondReport;
     private String paymentModeReport;
     private String entryStatusReport;
+    private String groupNameReport;
+
+    public String getGroupNameReport() {
+        return groupNameReport;
+    }
+
+    public void setGroupNameReport(String groupNameReport) {
+        this.groupNameReport = groupNameReport;
+    }
     
 
     public String getPaymentModeReport() {

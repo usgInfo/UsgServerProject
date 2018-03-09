@@ -56,7 +56,8 @@ public class BankReconcilationReportService extends HttpServlet {
             ServletContext servletContext = getServletContext();
             String path=File.separator+"usg"+File.separator+"images";
             String contextPath = servletContext.getRealPath("/"+path);
-            ByteArrayOutputStream baos = new BankReconcilationReportManager().bankReconcilationReport(fromDate, toDate, voucherdata, ledger, contextPath, fin, fromDateStr, ddo, location, finYear);
+//            ByteArrayOutputStream baos = new BankReconcilationReportManager().bankReconcilationReport(fromDate, toDate, voucherdata, ledger, contextPath, fin, fromDateStr, ddo, location, finYear);
+            ByteArrayOutputStream baos = new BankReconcilationReportManager().bankReconcilationReport(fromDateStr, fromDate, voucherdata, ledger, contextPath, fin, fromDateStr, ddo, location, finYear);
             if (baos != null) {
                 PDFMergerUtility ut = new PDFMergerUtility();
                 ut.addSource(new ByteArrayInputStream(baos.toByteArray()));

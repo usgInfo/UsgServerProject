@@ -59,7 +59,7 @@ public class ConsolidateIncomeBudgetService extends HttpServlet {
                     String finyear = request.getParameter("financialYear");
                     String fundType = request.getParameter("fundType");
                     String sector = request.getParameter("sector");
-                    String budgetHead = request.getParameter("budgetHead");
+                    String budgetType = request.getParameter("budgetType");
                     User user = new UserManager().fetch(loginUserId);
                     String userName = user.getFname() + " " + user.getLname();
                     //
@@ -67,7 +67,7 @@ public class ConsolidateIncomeBudgetService extends HttpServlet {
                     }.getType());
                     int count = list.size();
                     int resultCount = 0;
-                      String srNo = new ConsolidateIncomeBudgetManager().getSlNumber(finyear,fundType,sector,budgetHead);
+                      String srNo = new ConsolidateIncomeBudgetManager().getSlNumber(finyear,fundType,sector,budgetType);
                     for (Iterator<ConsolidateIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
                         ConsolidateIncomeBudget next = iterator.next();
                       

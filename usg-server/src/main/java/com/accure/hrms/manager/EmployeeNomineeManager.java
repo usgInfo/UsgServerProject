@@ -217,20 +217,7 @@ public class EmployeeNomineeManager {
         String result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.SALARY_HEAD_TABLE, conditionMap);
         List<SalaryHead> list = new Gson().fromJson(result1, new TypeToken<List<SalaryHead>>() {
         }.getType());
-        if (list != null) {
-
-            list = getParentHead(list);
-
-            list = getDeductionType(list);
-
-            list = getFormula(list);
-
-            list = getFixedHead(list);
-
-            list = getChapterVIType(list);
-
-            list = getSectionPart(list);
-        }
+       
         return new Gson().toJson(list);
     }
 
@@ -276,7 +263,8 @@ public class EmployeeNomineeManager {
 
     /**
      * This Method is to Search the <code>Employee</code> Object based on
-     * <code>_id</code> value of <code>Employee</code> Object in hexadecimal String.
+     * <code>_id</code> value of <code>Employee</code> Object in hexadecimal
+     * String.
      *
      * @param primaryKey <code>_id</code> value of <code>Employee</code> Object
      * in hexadecimal String.
@@ -604,8 +592,8 @@ public class EmployeeNomineeManager {
     /**
      * This is to search <code>Employee</code> object based on DDO value.
      *
-     * @param ddo  <code>_id</code> value of <code>DDO</code> Object in hexadecimal
-     * String
+     * @param ddo  <code>_id</code> value of <code>DDO</code> Object in
+     * hexadecimal String
      * @return List of Employee in JSON String Format.
      * @throws Exception if argument is <code>null</code>..
      */
@@ -641,8 +629,8 @@ public class EmployeeNomineeManager {
      * This method is to search <code>Employee</code> Object based on
      * DDO,location and dateOfJoining fields of <code>Employee</code> Object.
      *
-     * @param ddo  <code>_id</code> value  of <code>DDO</code> Object in hexadecimal
-     * String.
+     * @param ddo  <code>_id</code> value of <code>DDO</code> Object in
+     * hexadecimal String.
      * @param location  <code>_id</code> value of <code>Location</code> Object in
      * hexadecimal String.
      * @param fromDate <code>FinancialYear</code> Object fromDate value .

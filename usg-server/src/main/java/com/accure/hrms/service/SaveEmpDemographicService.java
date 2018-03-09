@@ -23,7 +23,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.apache.log4j.Logger;
 import com.accure.user.dto.User;
-		import com.accure.user.manager.UserManager;
+import com.accure.user.manager.UserManager;
+
 /**
  *
  * @author upendra
@@ -40,27 +41,27 @@ public class SaveEmpDemographicService extends HttpServlet {
         try {
             HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
-User currentUser = (User) session.getAttribute("user");
-					boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
-					if (authorized) {
-                String demoJson = request.getParameter("demojson");
-                String userid = request.getParameter("userid");
-                String empid = request.getParameter("empid");
-                Type type = new TypeToken<Employee>() {
-                }.getType();
-                Employee bank = new Gson().fromJson(demoJson, type);
-                boolean result = new EmpDemographicManager().saveDemographicData(bank, userid, empid);
+                User currentUser = (User) session.getAttribute("user");
+                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
+                if (authorized) {
+                    String demoJson = request.getParameter("demojson");
+                    String userid = request.getParameter("userid");
+                    String empid = request.getParameter("empid");
+                    Type type = new TypeToken<Employee>() {
+                    }.getType();
+                    Employee bank = new Gson().fromJson(demoJson, type);
+                    boolean result = new EmpDemographicManager().saveDemographicData(bank, userid, empid);
 
-                if (result) {
-                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
-                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_SUCCESS));
+                    if (result) {
+                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
+                        out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_SUCCESS));
 
+                    } else {
+                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
+                        out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
+                        logger.info(Common.getLogMsg("SaveEmpDemographicService", ApplicationConstants.UPDATE, ApplicationConstants.FAIL));
+                    }
                 } else {
-                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
-                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
-                    logger.info(Common.getLogMsg("SaveEmpDemographicService", ApplicationConstants.UPDATE, ApplicationConstants.FAIL));
-                }
-} else {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
                     out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
                 }

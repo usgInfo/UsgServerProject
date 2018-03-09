@@ -55,9 +55,9 @@ public class DeptWiseIncBudgetAllocSave extends HttpServlet {
             HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
 
-                User currentUser = (User) session.getAttribute("user");
-                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
-                if (authorized) {
+//                User currentUser = (User) session.getAttribute("user");
+//                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
+//                if (authorized) {
 
                     String searchObj = request.getParameter("objJson");
                     // String sanction = request.getParameter("employeeDetails");
@@ -87,11 +87,11 @@ public class DeptWiseIncBudgetAllocSave extends HttpServlet {
                         out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
                         logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
                     }
-                } else {
-                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
-                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
-                    logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.FAIL, ApplicationConstants.UNAUTHORIZED_ACCESS));
-                }
+//                } else {
+//                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
+//                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
+//                    logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.FAIL, ApplicationConstants.UNAUTHORIZED_ACCESS));
+//                }
             } else {
                 request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
                 out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));

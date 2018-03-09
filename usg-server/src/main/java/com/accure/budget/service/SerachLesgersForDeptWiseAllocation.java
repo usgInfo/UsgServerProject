@@ -54,6 +54,7 @@ public class SerachLesgersForDeptWiseAllocation extends HttpServlet {
                 Type type = new TypeToken<CreateIncomeBudget>() {
                 }.getType();
                 CreateIncomeBudget fc = new Gson().fromJson(searchObj, type);
+                String empid = request.getParameter("empid");
                 String result = new DepartmentWiseIncAlloManager().searchLedgers(fc);
                 
                //  String resultJson = null ;

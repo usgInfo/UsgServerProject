@@ -7,6 +7,7 @@
 package com.accure.budget.service;
 
 import com.accure.budget.manager.ConsolidateIncomeBudgetManager;
+import com.accure.budget.manager.SearchBudgetHeadManager;
 import com.accure.user.dto.User;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
@@ -45,12 +46,12 @@ public class LocationwiseIncomeDelete extends HttpServlet {
         try {
             String loginUserId = request.getParameter("userid");
             HttpSession session = request.getSession(false);
-            if (SessionManager.checkUserSession(session)) {
-
-                User currentUser = (User) session.getAttribute("user");
+//            if (SessionManager.checkUserSession(session)) {
+//
+//                User currentUser = (User) session.getAttribute("user");
         
                     String Id = request.getParameter("Id");
-                    boolean result = new ConsolidateIncomeBudgetManager().delete(Id, loginUserId);
+                    boolean result = new SearchBudgetHeadManager().delete(Id, loginUserId);
                     if (result == true) {
                         request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
                         out.write(new Gson().toJson(result));
@@ -61,11 +62,11 @@ public class LocationwiseIncomeDelete extends HttpServlet {
                         logger.info(Common.getLogMsg("LocationwiseIncomeDelete", ApplicationConstants.VIEW, ApplicationConstants.FAIL));
                     }
               
-            } else {
-                request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
-                out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));
-                logger.info(Common.getLogMsg("LocationwiseIncomeDelete", ApplicationConstants.FAIL, ApplicationConstants.INVALID_SESSION));
-            }
+//            } else {
+//                request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
+//                out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));
+//                logger.info(Common.getLogMsg("LocationwiseIncomeDelete", ApplicationConstants.FAIL, ApplicationConstants.INVALID_SESSION));
+//            }
         } catch (Exception ex) {
             request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_EXCEPTION);
             StringWriter stack = new StringWriter();

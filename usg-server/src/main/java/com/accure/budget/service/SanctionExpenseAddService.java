@@ -6,7 +6,6 @@
 package com.accure.budget.service;
 
 import com.accure.budget.dto.SanctionUniversityExpenseBudget;
-import com.accure.budget.manager.SanctionUniversityIncomeBudgetManager;
 import com.accure.budget.manager.SanctionUniversityExpenseBudgetManager;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
@@ -62,7 +61,7 @@ public class SanctionExpenseAddService extends HttpServlet {
                        String finyear = request.getParameter("financialYear");
                     String fundType = request.getParameter("fundType");
                     String sector = request.getParameter("sector");
-                    String budgetHead = request.getParameter("budgetHead");
+                    String budgetType = request.getParameter("budgetType");
                     String loginUserId = request.getParameter("userid");
                     String status = request.getParameter("status");
                     //System.out.println("loginUserId" + loginUserId);
@@ -71,7 +70,7 @@ public class SanctionExpenseAddService extends HttpServlet {
                     }.getType());
                     int count = list.size();
                     String result = "";
-                    String srNo = new SanctionUniversityExpenseBudgetManager().getSlNumber(finyear,fundType,sector,budgetHead);
+                    String srNo = new SanctionUniversityExpenseBudgetManager().getSlNumber(finyear,fundType,sector,budgetType);
                     if (status.equals("Save")) {
                         int resultCount = 0;
                         for (Iterator<SanctionUniversityExpenseBudget> iterator = list.iterator(); iterator.hasNext();) {

@@ -5,12 +5,14 @@
  */
 package com.accure.budget.manager;
 
+import com.accure.budget.dto.BudgetType;
 import com.accure.budget.dto.ConsolidateDepartmentIncome;
 import com.accure.hrms.dto.DepartmentDetails;
 import com.accure.budget.dto.CreateIncomeBudget;
 import com.accure.budget.dto.DeptWiseIncBudgetAllocation;
 import com.accure.hrms.dto.BudgetHeadMaster;
 import com.accure.hrms.dto.Department;
+import com.accure.hrms.dto.Employee;
 import com.accure.hrms.dto.EmployeeDepartmentMapping;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
@@ -97,23 +99,24 @@ public class DepartmentWiseIncAlloManager {
             conexpMap.put("ledgerId", cl.getLedgerId());
             conexpMap.put("status", ApplicationConstants.ACTIVE);
             String result1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CONSOLIDATE_DEPARTMENT_INCOME, conexpMap);
+            if (result1 != null) {
+                List<ConsolidateDepartmentIncome> conexpbudlist = new Gson().fromJson(result1, new TypeToken<List<ConsolidateDepartmentIncome>>() {
+                }.getType());
+                String id = ((LinkedTreeMap<String, String>) cl.getId()).get("$oid");
 
-            List<ConsolidateDepartmentIncome> conexpbudlist = new Gson().fromJson(result1, new TypeToken<List<ConsolidateDepartmentIncome>>() {
-            }.getType());
-            String id = ((LinkedTreeMap<String, String>) cl.getId()).get("$oid");
-
-            for (ConsolidateDepartmentIncome gal1 : conexpbudlist) {
-                List<String> li = gal1.getIncomeBudgetIdList();
-                String consledgerId = gal1.getLedgerId();
-                String isSanctioned = gal1.getIsSanctioned();
-                //  if (li.contains(id)) {
-                if (ledgerId.equalsIgnoreCase(consledgerId) && isSanctioned.equalsIgnoreCase("true") && li.contains(id)) {
-                    try {
-                        cl.SanctionedAmount(gal1.getRevisedSanctionedAmount());
-                        cl.consolidatedIncomeId(((LinkedTreeMap<String, String>) gal1.getId()).get("$oid"));
-                    } catch (Exception e) {
+                for (ConsolidateDepartmentIncome gal1 : conexpbudlist) {
+                    List<String> li = gal1.getIncomeBudgetIdList();
+                    String consledgerId = gal1.getLedgerId();
+                    String isSanctioned = gal1.getIsSanctioned();
+                    //  if (li.contains(id)) {
+                    if (ledgerId.equalsIgnoreCase(consledgerId) && isSanctioned.equalsIgnoreCase("true") && li.contains(id)) {
+                        try {
+                            cl.SanctionedAmount(gal1.getRevisedSanctionedAmount());
+                            cl.consolidatedIncomeId(((LinkedTreeMap<String, String>) gal1.getId()).get("$oid"));
+                        } catch (Exception e) {
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }
@@ -167,12 +170,21 @@ public class DepartmentWiseIncAlloManager {
         DBCursor cursor2 = collection.find(regexQuery);
 
         List<DeptWiseIncBudgetAllocation> finalList = new ArrayList<DeptWiseIncBudgetAllocation>();
+        String budgetTypeName = null;
+        String budgetTypeJson = DBManager.getDbConnection().fetch(ApplicationConstants.BUDGET_TYPE_TABLE, emp.getBudgetType());
+        if (budgetTypeJson != null) {
+            List<BudgetType> BudgetTypeList = new Gson().fromJson(budgetTypeJson, new TypeToken<List<BudgetType>>() {
+            }.getType());
 
+            budgetTypeName = BudgetTypeList.get(0).getDescription();
+
+        }
         while (cursor2.hasNext()) {
             DBObject ob = cursor2.next();
             Type type = new TypeToken<DeptWiseIncBudgetAllocation>() {
             }.getType();
             DeptWiseIncBudgetAllocation em = new Gson().fromJson(ob.toString(), type);
+            em.setBudgetTypeName(budgetTypeName);
             finalList.add(em);
         }
 
@@ -230,14 +242,13 @@ public class DepartmentWiseIncAlloManager {
         return null;
     }
 
-    public String getDepartmentsForExtraProvision(String budgetType, String finyear,String BudgetHead) throws Exception {
+    public String getDepartmentsForExtraProvision(String budgetType, String finyear, String BudgetHead) throws Exception {
         HashMap<String, String> DeptData = new HashMap<String, String>();
         HashMap<String, String> budgetData = new HashMap<String, String>();
         HashMap<String, String> conditionMap = new HashMap<String, String>();
         HashMap<String, HashMap<String, String>> finalResult = new HashMap<String, HashMap<String, String>>();
-        if(!BudgetHead.isEmpty())
-        {
-          conditionMap.put("budgetHead", BudgetHead);  
+        if (!BudgetHead.isEmpty()) {
+            conditionMap.put("budgetHead", BudgetHead);
         }
         conditionMap.put("budgetType", budgetType);
         conditionMap.put("financialYear", finyear);

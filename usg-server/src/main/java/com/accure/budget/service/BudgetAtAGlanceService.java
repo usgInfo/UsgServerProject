@@ -66,7 +66,7 @@ public class BudgetAtAGlanceService extends HttpServlet {
                     String path = File.separator + "usg" + File.separator + "images";
                     String contextPath = servletContext.getRealPath("/" + path);
                     HashMap<String, Object> finalResult = new BudgetAtAGlance().
-                            getBudgetAtGlanceRecords(budgetExpenseStr);
+                            getBudgetAtGlanceRecords_v1(budgetExpenseStr);
                     ByteArrayOutputStream bos = new CreatePDFFileNew().generateBudgetReport(finalResult,
                             contextPath);
                     if (bos != null) {

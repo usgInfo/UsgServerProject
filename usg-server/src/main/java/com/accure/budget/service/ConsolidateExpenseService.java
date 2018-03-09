@@ -65,13 +65,13 @@ public class ConsolidateExpenseService extends HttpServlet {
                      String finyear = request.getParameter("financialYear");
                     String fundType = request.getParameter("fundType");
                     String sector = request.getParameter("sector");
-                    String budgetHead = request.getParameter("budgetHead");
+                    String budgetType = request.getParameter("budgetType");
                     //
                     List<ConsolidateExpenseBudget> list = new Gson().fromJson(objJson, new TypeToken<List<ConsolidateExpenseBudget>>() {
                     }.getType());
                     int count = list.size();
                     int resultCount = 0;
-                    String newSlno = new ConsolidateExpenseBudgetManager().getSlNumber(finyear,fundType,sector,budgetHead);
+                    String newSlno = new ConsolidateExpenseBudgetManager().getSlNumber(finyear,fundType,sector,budgetType);
                     for (Iterator<ConsolidateExpenseBudget> iterator = list.iterator(); iterator.hasNext();) {
                         ConsolidateExpenseBudget next = iterator.next();
                         if (new ConsolidateExpenseBudgetManager().save(next, loginUserId, newSlno) != "") {

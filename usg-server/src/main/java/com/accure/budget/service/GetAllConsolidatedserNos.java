@@ -6,8 +6,6 @@
 package com.accure.budget.service;
 
 import com.accure.budget.dto.ConsolidateIncomeBudget;
-import com.accure.budget.dto.CreateIncomeBudget;
-import com.accure.budget.manager.BudgetIncomeManager;
 import com.accure.budget.manager.ConsolidateIncomeBudgetManager;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
@@ -17,6 +15,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
+import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -47,10 +46,15 @@ public class GetAllConsolidatedserNos extends HttpServlet {
             HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
                 String obj = request.getParameter("obj");
-                 Type type = new TypeToken<ConsolidateIncomeBudget>() {}.getType();
+                String dept = request.getParameter("department");
+                Type type1 = new TypeToken<List<String>>() {
+                }.getType();
+                List<String> deptList = new Gson().fromJson(dept, type1);
+                Type type = new TypeToken<ConsolidateIncomeBudget>() {
+                }.getType();
                 ConsolidateIncomeBudget createIncomeBudgetObj = new Gson().fromJson(obj, type);
                 ConsolidateIncomeBudgetManager asstn = new ConsolidateIncomeBudgetManager();
-                String resultJson = asstn.getsrNos(createIncomeBudgetObj);
+                String resultJson = asstn.getsrNos(createIncomeBudgetObj,deptList);
 
                 if (resultJson != null && !resultJson.isEmpty()) {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
@@ -114,4 +118,3 @@ public class GetAllConsolidatedserNos extends HttpServlet {
     }// </editor-fold>
 
 }
-
