@@ -7,7 +7,6 @@ package com.accure.budget.service;
 
 import com.accure.budget.dto.CreateIncomeBudget;
 import com.accure.budget.manager.BudgetIncomeManager;
-import com.accure.leave.service.EmpLeaveAssignmentService;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
 import com.accure.usg.server.utils.Common;
@@ -16,7 +15,6 @@ import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Iterator;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -66,11 +64,14 @@ public class BudgetIncomeSaveService extends HttpServlet {
                     List<CreateIncomeBudget> list = new Gson().fromJson(objJson, new TypeToken<List<CreateIncomeBudget>>() {
                     }.getType());
                     String result = null;
-                    String newSlno = new BudgetIncomeManager().getSlNumber(year, ddo, location,budgetType);
-                    for (CreateIncomeBudget cl : list) {
-                        result = new BudgetIncomeManager().Save(cl, newSlno);
+                    String newSlno = new BudgetIncomeManager().getSlNumber(year, ddo, location, budgetType, list.get(0));
+                    if (newSlno.equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                        result = ApplicationConstants.DUPLICATE_MESSAGE;
+                    } else {
+                        for (CreateIncomeBudget cl : list) {
+                            result = new BudgetIncomeManager().Save(cl, newSlno);
+                        }
                     }
-
                     if (result != null && !result.isEmpty()) {
                         request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
                         out.write(new Gson().toJson(result));

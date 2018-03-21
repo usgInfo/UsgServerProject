@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.accure.budget.service;
 
 import com.accure.budget.dto.CreateBudgetExpense;
@@ -30,7 +29,8 @@ import org.apache.log4j.Logger;
  * @author accure
  */
 public class ExtraProvisionExpenseSave extends HttpServlet {
- Logger logger = Logger.getLogger(ExtraProvisionExpenseSave.class);
+
+    Logger logger = Logger.getLogger(ExtraProvisionExpenseSave.class);
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -60,12 +60,17 @@ public class ExtraProvisionExpenseSave extends HttpServlet {
                 String result = "";
 
                 if (status.equals("Save")) {
+
                     int resultCount = 0;
                     for (Iterator<CreateBudgetExpense> iterator = list.iterator(); iterator.hasNext();) {
                         CreateBudgetExpense next = iterator.next();
-
-                        if (new ExtraProvisionExpanseManager().save(next, loginUserId) != "") {
-                            resultCount++;
+                        String checkDuplicate = new ExtraProvisionExpanseManager().checkDuplicateCon(next);
+                        if (checkDuplicate.equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                            result = ApplicationConstants.DUPLICATE_MESSAGE;
+                        } else {
+                            if (new ExtraProvisionExpanseManager().save(next, loginUserId) != "") {
+                                resultCount++;
+                            }
                         }
                     }
                     result = "false";

@@ -9,6 +9,8 @@ import com.accure.budget.dto.BudgetType;
 import com.accure.budget.dto.ConsolidateDepartmentExpence;
 import com.accure.budget.dto.CreateBudgetExpense;
 import com.accure.budget.dto.DeptWiseExpBudgetAllocation;
+import com.accure.budget.dto.DeptWiseIncBudgetAllocation;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.hrms.dto.BudgetHeadMaster;
 import com.accure.hrms.dto.Department;
 import com.accure.hrms.dto.Employee;
@@ -49,6 +51,24 @@ public class DepartmentWiseExpAlloManager {
             return null;
         }
         return new Gson().toJson(expenseBudgetApprovalList);
+    }
+
+    public String checkDuplicateCon(DeptWiseExpBudgetAllocation obj) {
+        HashMap<String, String> duplicateConditionMap = new HashMap<String, String>();
+        duplicateConditionMap.put("ddo", obj.getDdo());
+        duplicateConditionMap.put("location", obj.getLocation());
+        duplicateConditionMap.put("fundType", obj.getFundtype());
+        duplicateConditionMap.put("sector", obj.getSector());
+        duplicateConditionMap.put("financialYear", obj.getFinYear());
+        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+        duplicateConditionMap.put("department", obj.getDepartment());
+        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        if (Duplicate.hasDuplicateforSave(ApplicationConstants.DEPTWISE_EXP_BUDGET_ALLOC_TABLE, duplicateConditionMap)) {
+            return ApplicationConstants.DUPLICATE_MESSAGE;
+
+        }
+        return "proceed";
     }
 
     public String save(DeptWiseExpBudgetAllocation expbudgetDTO, String userid) throws Exception {

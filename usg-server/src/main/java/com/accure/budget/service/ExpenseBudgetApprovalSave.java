@@ -57,10 +57,14 @@ public class ExpenseBudgetApprovalSave extends HttpServlet {
                     }.getType();
                     List<String> deptList = new Gson().fromJson(dept, type1);
                     for (ExpenseBudgetApproval cl : list) {
-                        result = new ExpenseBudgetApprovalManager().save(cl, userid, deptList);
+                        String checkDuplicate = new ExpenseBudgetApprovalManager().checkDuplicateCon(cl,deptList);
+                        if (checkDuplicate.equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                            result = ApplicationConstants.DUPLICATE_MESSAGE;
+                        } else {
+                            result = new ExpenseBudgetApprovalManager().save(cl, userid, deptList);
 
+                        }
                     }
-
                     if (result != null && !result.isEmpty()) {
                         request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
                         out.write(new Gson().toJson(result));

@@ -7,9 +7,7 @@
 package com.accure.budget.service;
 
 import com.accure.budget.dto.ExpenseBudgetApproval;
-import com.accure.budget.dto.HeadwiseIncomeBudget;
 import com.accure.budget.manager.ExpenseBudgetApprovalManager;
-import com.accure.budget.manager.SearchBudgetHeadManager;
 import com.accure.user.dto.User;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
@@ -54,7 +52,7 @@ public class ExpenseBudgetApprovalUpdate extends HttpServlet {
             if (SessionManager.checkUserSession(session)) {
 
                 User currentUser = (User) session.getAttribute("user");
-         
+        
                     String objId = request.getParameter("Id");
                     String askedForMoney = request.getParameter("askedForMoney");
                     String loginUserId = request.getParameter("userid");

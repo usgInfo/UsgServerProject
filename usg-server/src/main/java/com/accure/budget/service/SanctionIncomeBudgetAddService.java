@@ -58,7 +58,7 @@ public class SanctionIncomeBudgetAddService extends HttpServlet {
 
                     String objJson = request.getParameter("objJson");
                     //System.out.println("objJson" + objJson);
-                     String finyear = request.getParameter("financialYear");
+                    String finyear = request.getParameter("financialYear");
                     String fundType = request.getParameter("fundType");
                     String sector = request.getParameter("sector");
                     String budgetType = request.getParameter("budgetType");
@@ -70,20 +70,24 @@ public class SanctionIncomeBudgetAddService extends HttpServlet {
                     }.getType());
                     int count = list.size();
                     String result = "";
-                    String srNo = new SanctionUniversityIncomeBudgetManager().getSlNumber(finyear,fundType,sector,budgetType);
+                    String srNo = new SanctionUniversityIncomeBudgetManager().getSlNumber(finyear, fundType, sector, budgetType);
                     if (status.equals("Save")) {
                         int resultCount = 0;
                         for (Iterator<SanctionUniversityIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
                             SanctionUniversityIncomeBudget next = iterator.next();
-                          
-                            if (new SanctionUniversityIncomeBudgetManager().save(next, loginUserId, srNo) != "") {
-                                resultCount++;
+                            if (new SanctionUniversityIncomeBudgetManager().checkDuplicate(next).equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                                result = ApplicationConstants.DUPLICATE_MESSAGE;
+                            } else {
+                                if (new SanctionUniversityIncomeBudgetManager().save(next, loginUserId, srNo) != "") {
+                                    resultCount++;
+                                }
                             }
                         }
                         result = "false";
                         if (resultCount == count) {
                             result = "true";
                         }
+
                     }
 
                     if (status.equals("Submit")) {
@@ -92,7 +96,7 @@ public class SanctionIncomeBudgetAddService extends HttpServlet {
                         for (Iterator<SanctionUniversityIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
                             SanctionUniversityIncomeBudget next = iterator.next();
 
-                            if (new SanctionUniversityIncomeBudgetManager().submit(next, loginUserId,srNo) != "") {
+                            if (new SanctionUniversityIncomeBudgetManager().submit(next, loginUserId, srNo) != "") {
                                 resultCount++;
                             }
                         }

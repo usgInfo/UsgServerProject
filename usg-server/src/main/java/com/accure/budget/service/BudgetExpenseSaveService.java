@@ -30,7 +30,7 @@ import com.accure.user.manager.UserManager;
  * @author user
  */
 public class BudgetExpenseSaveService extends HttpServlet {
-
+    
     Logger logger = Logger.getLogger(BudgetIncomeSaveService.class);
     String privilege = ApplicationConstants.PV_BUDGET_EXPENSES_CREATE;
 
@@ -50,7 +50,7 @@ public class BudgetExpenseSaveService extends HttpServlet {
         try {
             HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
-
+                
                 User currentUser = (User) session.getAttribute("user");
                 boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
                 if (authorized) {
@@ -59,14 +59,18 @@ public class BudgetExpenseSaveService extends HttpServlet {
                     String ddo = request.getParameter("ddo");
                     String location = request.getParameter("location");
                     String budgetType = request.getParameter("budgetType");
-
+                    
                     List<CreateBudgetExpense> list = new Gson().fromJson(objJson, new TypeToken<List<CreateBudgetExpense>>() {
                     }.getType());
                     String result = null;
-                    String newSlno = new BudgetExpenseManager().getSlNumber(year,ddo,location,budgetType);
-                    for (CreateBudgetExpense cl : list) {
-
-                        result = new BudgetExpenseManager().save(cl, newSlno);
+                    String newSlno = new BudgetExpenseManager().getSlNumber(year, ddo, location, budgetType, list.get(0));
+                    if (newSlno.equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                        result = ApplicationConstants.DUPLICATE_MESSAGE;
+                    } else {
+                        for (CreateBudgetExpense cl : list) {
+                            
+                            result = new BudgetExpenseManager().save(cl, newSlno);
+                        }
                     }
                     if (result != null && !result.isEmpty()) {
                         request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
@@ -93,7 +97,7 @@ public class BudgetExpenseSaveService extends HttpServlet {
             ex.printStackTrace(new PrintWriter(stack));
             out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_EXCEPTION));
             logger.info(Common.getLogMsg("BudgetExpenseSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.HTTP_STATUS_EXCEPTION));
-
+            
         } finally {
             out.close();
         }

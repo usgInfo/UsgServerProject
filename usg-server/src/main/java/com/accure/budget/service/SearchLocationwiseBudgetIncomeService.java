@@ -45,6 +45,7 @@ public class SearchLocationwiseBudgetIncomeService extends HttpServlet {
                 String dept = request.getParameter("department");
                 Type type1 = new TypeToken<List<String>>() {
                 }.getType();
+                
                 List<String> deptList = new Gson().fromJson(dept, type1);
                 Type type = new TypeToken<HeadwiseIncomeBudget>() {
                 }.getType();

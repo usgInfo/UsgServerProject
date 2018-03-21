@@ -3,12 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.accure.budget.manager;
 
 import com.accure.budget.dto.CreateBudgetExpense;
+import com.accure.budget.dto.CreateIncomeBudget;
 import com.accure.budget.dto.DeptWiseExpBudgetAllocation;
 import static com.accure.budget.manager.SanctionUniversityExpenseBudgetManager.SUBMIT;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.DBManager;
@@ -25,7 +26,8 @@ import java.util.Map;
  * @author accure
  */
 public class ExtraProvisionExpanseManager {
-     public String save(CreateBudgetExpense extraProvsion, String loginUserId) throws Exception {
+
+    public String save(CreateBudgetExpense extraProvsion, String loginUserId) throws Exception {
         User user = new UserManager().fetch(loginUserId);
         String userName = user.getFname() + " " + user.getLname();
         extraProvsion.setCreateDate(System.currentTimeMillis() + "");
@@ -39,6 +41,22 @@ public class ExtraProvisionExpanseManager {
             return Id;
         }
         return null;
+    }
+
+    public String checkDuplicateCon(CreateBudgetExpense obj) {
+        HashMap<String, String> duplicateConditionMap = new HashMap<String, String>();
+        duplicateConditionMap.put("fundType", obj.getFundType());
+        duplicateConditionMap.put("sector", obj.getSector());
+        duplicateConditionMap.put("financialYear", obj.getFinancialYear());
+        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+        duplicateConditionMap.put("department", obj.getDepartment());
+        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        if (Duplicate.hasDuplicateforSave(ApplicationConstants.EXTRA_PROVISION_EXPENSE, duplicateConditionMap)) {
+            return ApplicationConstants.DUPLICATE_MESSAGE;
+
+        }
+        return "proceed";
     }
 
     public String SearchData(CreateBudgetExpense obj) throws Exception {
@@ -131,8 +149,8 @@ public class ExtraProvisionExpanseManager {
             cseb.setIsExtraProvisioned("true");
             String incomeJson = new Gson().toJson(cseb);
             boolean resultstaus = DBManager.getDbConnection().update(ApplicationConstants.BUDGET_EXPENSE_TABLE, BudgetSanctionIncomerJson.getIncomeBudgetId(), incomeJson);
-           
-             HashMap<String, String> condition = new HashMap<String, String>();
+
+            HashMap<String, String> condition = new HashMap<String, String>();
             condition.put("createExpenseId", BudgetSanctionIncomerJson.getIncomeBudgetId());
             condition.put("status", ApplicationConstants.ACTIVE);
 
@@ -143,7 +161,7 @@ public class ExtraProvisionExpanseManager {
             aloocationData.setExtraProvisionAmount(BudgetSanctionIncomerJson.getExtraProvisionAmount());
             String allocationJson = new Gson().toJson(aloocationData);
             DBManager.getDbConnection().update(ApplicationConstants.DEPTWISE_EXP_BUDGET_ALLOC_TABLE, ((Map<String, String>) aloocationData.getId()).get("$oid"), allocationJson);
-            
+
             if (resultstaus) {
                 return id;
             }
@@ -151,7 +169,8 @@ public class ExtraProvisionExpanseManager {
         }
         return false;
     }
-public boolean delete(String id) throws Exception {
+
+    public boolean delete(String id) throws Exception {
 
         if (id == null || id.isEmpty()) {
             return false;

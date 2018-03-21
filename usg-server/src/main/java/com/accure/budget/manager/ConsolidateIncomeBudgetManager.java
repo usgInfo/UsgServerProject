@@ -13,6 +13,7 @@ import com.accure.budget.dto.FinancialYear;
 import com.accure.budget.dto.FundType;
 import com.accure.hrms.dto.BudgetHeadMaster;
 import com.accure.budget.dto.Sector;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.finance.dto.DDO;
 import com.accure.finance.dto.Ledger;
 import com.accure.user.dto.User;
@@ -735,7 +736,25 @@ public class ConsolidateIncomeBudgetManager {
         return result1;
     }
 
+    public String checkDuplicate(ConsolidateIncomeBudget obj) {
+//        HashMap<String, Object> duplicateConditionMap = new HashMap<String, Object>();
+//        duplicateConditionMap.put("ddo", obj.getDdo());
+//        duplicateConditionMap.put("fundType", obj.getFundType());
+//        duplicateConditionMap.put("sector", obj.getSector());
+//        duplicateConditionMap.put("financialYear", obj.getFinancialYear());
+//        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+//        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+//        duplicateConditionMap.put("incomeBudgetIdList", obj.getIncomeBudgetIdList());
+//        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+//        if (Duplicate.hasDuplicateforSave(ApplicationConstants.CONSOLIDATE_INCOME_BUDGET, duplicateConditionMap)) {
+//            return ApplicationConstants.DUPLICATE_MESSAGE;
+//
+//        }
+        return "proceed";
+    }
+
     public String getSlNumber(String year, String fundType, String sector, String budgetType) throws Exception {
+
         String result = new ConsolidateIncomeBudgetManager().fetchAllBasedOnFinancialYear(year, fundType, sector, budgetType);
         List<ConsolidateIncomeBudget> loanApplyList = new Gson().fromJson(result, new TypeToken<List<ConsolidateIncomeBudget>>() {
         }.getType());

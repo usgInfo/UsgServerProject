@@ -54,46 +54,52 @@ public class ConsolidateIncomeBudgetService extends HttpServlet {
             HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
 
-                    String objJson = request.getParameter("objJson");
-                    String loginUserId = request.getParameter("userid");
-                    String finyear = request.getParameter("financialYear");
-                    String fundType = request.getParameter("fundType");
-                    String sector = request.getParameter("sector");
-                    String budgetType = request.getParameter("budgetType");
-                    User user = new UserManager().fetch(loginUserId);
-                    String userName = user.getFname() + " " + user.getLname();
-                    //
-                    List<ConsolidateIncomeBudget> list = new Gson().fromJson(objJson, new TypeToken<List<ConsolidateIncomeBudget>>() {
-                    }.getType());
-                    int count = list.size();
-                    int resultCount = 0;
-                      String srNo = new ConsolidateIncomeBudgetManager().getSlNumber(finyear,fundType,sector,budgetType);
+                String objJson = request.getParameter("objJson");
+                String loginUserId = request.getParameter("userid");
+                String finyear = request.getParameter("financialYear");
+                String fundType = request.getParameter("fundType");
+                String sector = request.getParameter("sector");
+                String budgetType = request.getParameter("budgetType");
+                User user = new UserManager().fetch(loginUserId);
+                String userName = user.getFname() + " " + user.getLname();
+                //
+                List<ConsolidateIncomeBudget> list = new Gson().fromJson(objJson, new TypeToken<List<ConsolidateIncomeBudget>>() {
+                }.getType());
+                int count = list.size();
+                int resultCount = 0;
+                String srNo = new ConsolidateIncomeBudgetManager().getSlNumber(finyear, fundType, sector, budgetType);
+                String result = "false";
+               
                     for (Iterator<ConsolidateIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
                         ConsolidateIncomeBudget next = iterator.next();
-                      
-                        if (new ConsolidateIncomeBudgetManager().save(next, loginUserId, srNo) != "") {
-                            ArrayList<String> li = (ArrayList<String>) next.getIncomeBudgetIdList();
-                            for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
-                                String next1 = iterator1.next();
-                                new ConsolidateIncomeBudgetManager().updateIsConsolidateFlagOfIncomeBudget(next1, userName);
+                        if (new ConsolidateIncomeBudgetManager().checkDuplicate(next).equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                            result = ApplicationConstants.DUPLICATE_MESSAGE;
+                        } else {
+                            if (new ConsolidateIncomeBudgetManager().save(next, loginUserId, srNo) != "") {
+                                ArrayList<String> li = (ArrayList<String>) next.getIncomeBudgetIdList();
+                                for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
+                                    String next1 = iterator1.next();
+                                    new ConsolidateIncomeBudgetManager().updateIsConsolidateFlagOfIncomeBudget(next1, userName);
+                                }
+                                resultCount++;
                             }
-                            resultCount++;
                         }
                     }
-                    String result = "false";
+
                     if (resultCount == count) {
                         result = "true";
                     }
-                    if (result != null && !result.isEmpty()) {
-                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
-                        out.write(new Gson().toJson(result));
-                        logger.info(Common.getLogMsg("ConsolidateExpenseBudgetService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
-                    } else {
-                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
-                        out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
-                        logger.info(Common.getLogMsg("ConsolidateExpenseBudgetService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
-                    }
-             
+                
+                if (result != null && !result.isEmpty()) {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
+                    out.write(new Gson().toJson(result));
+                    logger.info(Common.getLogMsg("ConsolidateExpenseBudgetService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
+                } else {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
+                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
+                    logger.info(Common.getLogMsg("ConsolidateExpenseBudgetService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
+                }
+
             } else {
                 request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_INVALID_SESSION);
                 out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_INVALID_SESSION));

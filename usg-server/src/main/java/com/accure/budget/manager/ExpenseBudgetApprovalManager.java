@@ -11,6 +11,7 @@ import com.accure.budget.dto.CreateBudgetExpense;
 import com.accure.budget.dto.CreateIncomeBudget;
 import com.accure.budget.dto.ExpenseBudgetApproval;
 import static com.accure.budget.manager.ConsolidateIncomeBudgetManager.SUBMIT;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.DBManager;
@@ -125,6 +126,24 @@ public class ExpenseBudgetApprovalManager {
         expenseBudgetJson.setUpdatedBy(userName);
         boolean finalresult = DBManager.getDbConnection().update(ApplicationConstants.EXPENSE_BUDGET_APPROVAL, Id, new Gson().toJson(expenseBudgetJson));
         return finalresult;
+    }
+
+    public String checkDuplicateCon(ExpenseBudgetApproval obj,List deptData) {
+//        HashMap<String, Object> duplicateConditionMap = new HashMap<String, Object>();
+//        duplicateConditionMap.put("ddo", obj.getDdo());
+//        duplicateConditionMap.put("location", obj.getLocation());
+//        duplicateConditionMap.put("fundtype", obj.getFundtype());
+//        duplicateConditionMap.put("sector", obj.getSector());
+//        duplicateConditionMap.put("finYear", obj.getFinYear());
+//        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+//        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+//        duplicateConditionMap.put("departments", deptData);
+//        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+//        if (Duplicate.hasDuplicateforSave(ApplicationConstants.EXPENSE_BUDGET_APPROVAL, duplicateConditionMap)) {
+//            return ApplicationConstants.DUPLICATE_MESSAGE;
+//
+//        }
+        return "proceed";
     }
 
     public String save(ExpenseBudgetApproval next, String loginUserId, List deptData) throws Exception {
@@ -327,7 +346,6 @@ public class ExpenseBudgetApprovalManager {
         }
         return new Gson().toJson(finallist);
     }
-
     public boolean update(ExpenseBudgetApproval exenseBudget, String Id, String loginUserId) throws Exception {
         User user = new UserManager().fetch(loginUserId);
         String userName = user.getFname() + " " + user.getLname();
@@ -353,8 +371,8 @@ public class ExpenseBudgetApprovalManager {
             return false;
         }
         ExpenseBudgetApproval expenseBudgetJson = new Gson().fromJson(expenseBudget, type);
-        
-          String consolidatedExpenseId = expenseBudgetJson.getConsolidatedExpenseId();
+
+        String consolidatedExpenseId = expenseBudgetJson.getConsolidatedExpenseId();
 
         String ConsolidateExpenseBudgetData = new ConsolidateExpenseBudgetManager().fetch(consolidatedExpenseId);
         if (ConsolidateExpenseBudgetData == null || ConsolidateExpenseBudgetData.isEmpty()) {
@@ -369,14 +387,15 @@ public class ExpenseBudgetApprovalManager {
             String next1 = iterator1.next();
             new ExpenseBudgetApprovalManager().updateIsSanctionedFlagOfFalseConsolidateExpense(next1);
         }
-        
+
         expenseBudgetJson.setStatus(ApplicationConstants.INACTIVE);
         expenseBudgetJson.setConsolidateBudgetStatus(ApplicationConstants.DELETED);
         expenseBudgetJson.setUpdatedBy(userName);
         boolean result = DBManager.getDbConnection().update(ApplicationConstants.EXPENSE_BUDGET_APPROVAL, Id, new Gson().toJson(expenseBudgetJson));
         return result;
     }
-      public boolean updateIsSanctionedFlagOfFalseConsolidateExpense(String id) throws Exception {
+
+    public boolean updateIsSanctionedFlagOfFalseConsolidateExpense(String id) throws Exception {
 
         String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.CONSOLIDATE_DEPARTMENT_EXPENSE, id);
         List<ConsolidateDepartmentExpence> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<ConsolidateDepartmentExpence>>() {

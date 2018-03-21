@@ -31,7 +31,7 @@ import com.accure.user.manager.UserManager;
  * @author user
  */
 public class SanctionExpenseAddService extends HttpServlet {
-
+    
     Logger logger = Logger.getLogger(SanctionExpenseAddService.class);
     String privilege = ApplicationConstants.PV_LOCATION_WISE_EXPENSE_BUDGET_VIEW;
 
@@ -51,14 +51,14 @@ public class SanctionExpenseAddService extends HttpServlet {
         try {
             HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
-
+                
                 User currentUser = (User) session.getAttribute("user");
                 boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
                 if (authorized) {
-
+                    
                     String objJson = request.getParameter("objJson");
                     //System.out.println("objJson" + objJson);
-                       String finyear = request.getParameter("financialYear");
+                    String finyear = request.getParameter("financialYear");
                     String fundType = request.getParameter("fundType");
                     String sector = request.getParameter("sector");
                     String budgetType = request.getParameter("budgetType");
@@ -70,28 +70,32 @@ public class SanctionExpenseAddService extends HttpServlet {
                     }.getType());
                     int count = list.size();
                     String result = "";
-                    String srNo = new SanctionUniversityExpenseBudgetManager().getSlNumber(finyear,fundType,sector,budgetType);
+                    String srNo = new SanctionUniversityExpenseBudgetManager().getSlNumber(finyear, fundType, sector, budgetType);
                     if (status.equals("Save")) {
                         int resultCount = 0;
                         for (Iterator<SanctionUniversityExpenseBudget> iterator = list.iterator(); iterator.hasNext();) {
                             SanctionUniversityExpenseBudget next = iterator.next();
-                            if (new SanctionUniversityExpenseBudgetManager().save(next, loginUserId, srNo) != "") {
-                                resultCount++;
+                            if (new SanctionUniversityExpenseBudgetManager().checkDuplicate(next).equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                                result = ApplicationConstants.DUPLICATE_MESSAGE;
+                            } else {
+                                if (new SanctionUniversityExpenseBudgetManager().save(next, loginUserId, srNo) != "") {
+                                    resultCount++;
+                                }
                             }
                         }
                         result = "false";
                         if (resultCount == count) {
                             result = "true";
                         }
+                        
                     }
-
                     if (status.equals("Submit")) {
                         int resultCount = 0;
-
+                        
                         for (Iterator<SanctionUniversityExpenseBudget> iterator = list.iterator(); iterator.hasNext();) {
                             SanctionUniversityExpenseBudget next = iterator.next();
-
-                            if (new SanctionUniversityExpenseBudgetManager().submit(next, loginUserId,srNo) != "") {
+                            
+                            if (new SanctionUniversityExpenseBudgetManager().submit(next, loginUserId, srNo) != "") {
                                 resultCount++;
                             }
                         }
@@ -100,7 +104,7 @@ public class SanctionExpenseAddService extends HttpServlet {
                             result = "true";
                         }
                     }
-
+                    
                     if (result != null && !result.isEmpty()) {
                         request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
                         out.write(new Gson().toJson(result));

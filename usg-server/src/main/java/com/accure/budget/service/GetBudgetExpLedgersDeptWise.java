@@ -6,7 +6,6 @@
 package com.accure.budget.service;
 
 import com.accure.budget.manager.DepartmentWiseExpAlloManager;
-import com.accure.budget.manager.ExpenseBudgetApprovalManager;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
 import com.accure.usg.server.utils.Common;
@@ -34,6 +33,7 @@ public class GetBudgetExpLedgersDeptWise extends HttpServlet {
         response.setContentType("text/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
         try {
+            
             HttpSession session = request.getSession(false);
             if (SessionManager.checkUserSession(session)) {
                 String ddo = request.getParameter("ddo");

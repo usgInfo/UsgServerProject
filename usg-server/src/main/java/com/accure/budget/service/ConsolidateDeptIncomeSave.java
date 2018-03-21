@@ -70,22 +70,27 @@ public class ConsolidateDeptIncomeSave extends HttpServlet {
             int count = list.size();
             int resultCount = 0;
             String srNo = new ConsolidateDeptIncomeManager().getSlNumber(finyear, fundType, sector, budgetType);
+            String result = "false";
             for (Iterator<ConsolidateDepartmentIncome> iterator = list.iterator(); iterator.hasNext();) {
                 ConsolidateDepartmentIncome next = iterator.next();
-
-                if (new ConsolidateDeptIncomeManager().save(next, loginUserId, srNo) != "") {
-                    ArrayList<String> li = (ArrayList<String>) next.getIncomeBudgetIdList();
-                    for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
-                        String next1 = iterator1.next();
-                        new ConsolidateDeptIncomeManager().updateIsConsolidateFlagOfIncomeBudget(next1, userName);
+                if (new ConsolidateDeptIncomeManager().checkDuplicate(next).equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                    result = ApplicationConstants.DUPLICATE_MESSAGE;
+                } else {
+                    if (new ConsolidateDeptIncomeManager().save(next, loginUserId, srNo) != "") {
+                        ArrayList<String> li = (ArrayList<String>) next.getIncomeBudgetIdList();
+                        for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
+                            String next1 = iterator1.next();
+                            new ConsolidateDeptIncomeManager().updateIsConsolidateFlagOfIncomeBudget(next1, userName);
+                        }
+                        resultCount++;
                     }
-                    resultCount++;
                 }
             }
-            String result = "false";
+
             if (resultCount == count) {
                 result = "true";
             }
+
             if (result != null && !result.isEmpty()) {
                 request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
                 out.write(new Gson().toJson(result));

@@ -68,15 +68,20 @@ public class HeadwiseIncomeBudgetSaveService extends HttpServlet {
                 }.getType());
                 int count = list.size();
                 int resultCount = 0;
+                String result = "false";
 
                 for (Iterator<HeadwiseIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
                     HeadwiseIncomeBudget next = iterator.next();
-                    if (new SearchBudgetHeadManager().save(next, loginUserId,deptList) != "") {
-                        resultCount++;
+                    String checkDuplicate = new SearchBudgetHeadManager().checkDuplicateCon(next,deptList);
+                    if (checkDuplicate.equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                        result = ApplicationConstants.DUPLICATE_MESSAGE;
+                    } else {
+                        if (new SearchBudgetHeadManager().save(next, loginUserId, deptList) != "") {
+                            resultCount++;
+                        }
                     }
                 }
 
-                String result = "false";
                 if (resultCount == count) {
                     result = "true";
                 }

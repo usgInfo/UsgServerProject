@@ -8,6 +8,7 @@ package com.accure.budget.manager;
 import com.accure.budget.dto.BudgetType;
 import com.accure.budget.dto.ConsolidateDepartmentExpence;
 import com.accure.budget.dto.CreateBudgetExpense;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.finance.dto.Ledger;
 import com.accure.hrms.dto.BudgetHeadMaster;
 import com.accure.user.dto.User;
@@ -480,8 +481,27 @@ public class ConsolidateDeptExpenseManager {
         return result1;
     }
 
+    public String checkDuplicate(ConsolidateDepartmentExpence obj) {
+//        HashMap<String, Object> duplicateConditionMap = new HashMap<String, Object>();
+//        duplicateConditionMap.put("ddo", obj.getDdo());
+//        duplicateConditionMap.put("location", obj.getLocation());
+//        duplicateConditionMap.put("fundType", obj.getFundType());
+//        duplicateConditionMap.put("sector", obj.getSector());
+//        duplicateConditionMap.put("financialYear", obj.getFinancialYear());
+//        duplicateConditionMap.put("department", obj.getDepartment());
+//        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+//        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+//        duplicateConditionMap.put("incomeBudgetIdList", obj.getIncomeBudgetIdList());
+//        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+//        if (Duplicate.hasDuplicateforSave(ApplicationConstants.CONSOLIDATE_DEPARTMENT_EXPENSE, duplicateConditionMap)) {
+//            return ApplicationConstants.DUPLICATE_MESSAGE;
+//
+//        }
+        return "proceed";
+    }
+
     public String getSlNumber(String year, String fundType, String sector, String budgetType) throws Exception {
-        String result = new ConsolidateExpenseBudgetManager().fetchAllBasedOnFinancialYear(year, fundType, sector, budgetType);
+        String result = new ConsolidateDeptExpenseManager().fetchAllBasedOnFinancialYear(year, fundType, sector, budgetType);
         List<ConsolidateDepartmentExpence> loanApplyList = new Gson().fromJson(result, new TypeToken<List<ConsolidateDepartmentExpence>>() {
         }.getType());
 

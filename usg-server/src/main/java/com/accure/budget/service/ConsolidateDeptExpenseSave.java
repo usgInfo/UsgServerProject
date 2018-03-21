@@ -7,7 +7,6 @@ package com.accure.budget.service;
 
 import com.accure.budget.dto.ConsolidateDepartmentExpence;
 import com.accure.budget.manager.ConsolidateDeptExpenseManager;
-import com.accure.budget.manager.ConsolidateExpenseBudgetManager;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.SessionManager;
@@ -74,19 +73,25 @@ public class ConsolidateDeptExpenseSave extends HttpServlet {
                     int count = list.size();
                     int resultCount = 0;
                     String newSlno = new ConsolidateDeptExpenseManager().getSlNumber(finyear, fundType, sector, budgetType);
+                    String result = "false";
+
+//                        result = ApplicationConstants.DUPLICATE_MESSAGE;
                     for (Iterator<ConsolidateDepartmentExpence> iterator = list.iterator(); iterator.hasNext();) {
                         ConsolidateDepartmentExpence next = iterator.next();
-
-                        if (new ConsolidateDeptExpenseManager().save(next, loginUserId, newSlno) != "") {
-                            ArrayList<String> li = (ArrayList<String>) next.getIncomeBudgetIdList();
-                            for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
-                                String next1 = iterator1.next();
-                                new ConsolidateDeptExpenseManager().updateIsConsolidateFlagOfExpenseBudget(next1, userName);
+                        if (new ConsolidateDeptExpenseManager().checkDuplicate(next).equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                            result = ApplicationConstants.DUPLICATE_MESSAGE;
+                        } else {
+                            if (new ConsolidateDeptExpenseManager().save(next, loginUserId, newSlno) != "") {
+                                ArrayList<String> li = (ArrayList<String>) next.getIncomeBudgetIdList();
+                                for (Iterator<String> iterator1 = li.iterator(); iterator1.hasNext();) {
+                                    String next1 = iterator1.next();
+                                    new ConsolidateDeptExpenseManager().updateIsConsolidateFlagOfExpenseBudget(next1, userName);
+                                }
+                                resultCount++;
                             }
-                            resultCount++;
                         }
                     }
-                    String result = "false";
+
                     if (resultCount == count) {
                         result = "true";
                     }
@@ -99,7 +104,7 @@ public class ConsolidateDeptExpenseSave extends HttpServlet {
                         out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
                         logger.info(Common.getLogMsg("ConsolidateDeptExpenseSave", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
                     }
-            } else {
+                } else {
                     request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
                     out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));
                     logger.info(Common.getLogMsg("ConsolidateDeptExpenseSave", ApplicationConstants.FAIL, ApplicationConstants.UNAUTHORIZED_ACCESS));

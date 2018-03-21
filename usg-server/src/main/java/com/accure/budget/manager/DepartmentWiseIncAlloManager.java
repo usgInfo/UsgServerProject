@@ -10,6 +10,8 @@ import com.accure.budget.dto.ConsolidateDepartmentIncome;
 import com.accure.hrms.dto.DepartmentDetails;
 import com.accure.budget.dto.CreateIncomeBudget;
 import com.accure.budget.dto.DeptWiseIncBudgetAllocation;
+import com.accure.budget.dto.HeadwiseIncomeBudget;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.hrms.dto.BudgetHeadMaster;
 import com.accure.hrms.dto.Department;
 import com.accure.hrms.dto.Employee;
@@ -189,6 +191,24 @@ public class DepartmentWiseIncAlloManager {
         }
 
         return new Gson().toJson(finalList);
+    }
+
+    public String checkDuplicateCon(DeptWiseIncBudgetAllocation obj) {
+        HashMap<String, String> duplicateConditionMap = new HashMap<String, String>();
+        duplicateConditionMap.put("ddo", obj.getDdo());
+        duplicateConditionMap.put("location", obj.getLocation());
+        duplicateConditionMap.put("fundType", obj.getFundType());
+        duplicateConditionMap.put("sector", obj.getSector());
+        duplicateConditionMap.put("financialYear", obj.getFinancialYear());
+        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+        duplicateConditionMap.put("department", obj.getDepartment());
+        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        if (Duplicate.hasDuplicateforSave(ApplicationConstants.DEPTWISE_INC_BUDGET_ALLOC_TABLE, duplicateConditionMap)) {
+            return ApplicationConstants.DUPLICATE_MESSAGE;
+
+        }
+        return "proceed";
     }
 
     public String save(DeptWiseIncBudgetAllocation next, String loginUserId) {

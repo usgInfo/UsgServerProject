@@ -6,11 +6,7 @@
 package com.accure.budget.service;
 
 import com.accure.budget.dto.DeptWiseIncBudgetAllocation;
-import com.accure.budget.dto.HeadwiseIncomeBudget;
 import com.accure.budget.manager.DepartmentWiseIncAlloManager;
-import com.accure.budget.manager.SearchBudgetHeadManager;
-import com.accure.user.dto.User;
-import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.SessionManager;
 import com.accure.usg.server.utils.ApplicationConstants;
 import com.accure.usg.server.utils.Common;
@@ -34,7 +30,7 @@ import org.apache.log4j.Logger;
  */
 public class DeptWiseIncBudgetAllocSave extends HttpServlet {
 
-   Logger logger = Logger.getLogger(HeadwiseIncomeBudgetSaveService.class);
+    Logger logger = Logger.getLogger(HeadwiseIncomeBudgetSaveService.class);
     String privilege = ApplicationConstants.PV_LOCATION_INCOME_BUDGET_ALLOCATION_CREATE;
 
     /**
@@ -58,35 +54,39 @@ public class DeptWiseIncBudgetAllocSave extends HttpServlet {
 //                User currentUser = (User) session.getAttribute("user");
 //                boolean authorized = UserManager.checkUserPrivilege(currentUser, privilege);
 //                if (authorized) {
+                String searchObj = request.getParameter("objJson");
+                // String sanction = request.getParameter("employeeDetails");
+                String loginUserId = request.getParameter("userid");
+                List<DeptWiseIncBudgetAllocation> list = new Gson().fromJson(searchObj, new TypeToken<List<DeptWiseIncBudgetAllocation>>() {
+                }.getType());
+                int count = list.size();
+                int resultCount = 0;
+                String result = "false";
 
-                    String searchObj = request.getParameter("objJson");
-                    // String sanction = request.getParameter("employeeDetails");
-                    String loginUserId = request.getParameter("userid");
-                    List<DeptWiseIncBudgetAllocation> list = new Gson().fromJson(searchObj, new TypeToken<List<DeptWiseIncBudgetAllocation>>() {
-                    }.getType());
-                    int count = list.size();
-                    int resultCount = 0;
-
-                    for (Iterator<DeptWiseIncBudgetAllocation> iterator = list.iterator(); iterator.hasNext();) {
-                        DeptWiseIncBudgetAllocation next = iterator.next();
+                for (Iterator<DeptWiseIncBudgetAllocation> iterator = list.iterator(); iterator.hasNext();) {
+                    DeptWiseIncBudgetAllocation next = iterator.next();
+                    String checkDuplicate = new DepartmentWiseIncAlloManager().checkDuplicateCon(next);
+                    if (checkDuplicate.equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                        result = ApplicationConstants.DUPLICATE_MESSAGE;
+                    } else {
                         if (new DepartmentWiseIncAlloManager().save(next, loginUserId) != "") {
                             resultCount++;
                         }
                     }
+                }
 
-                    String result = "false";
-                    if (resultCount == count) {
-                        result = "true";
-                    }
-                    if (result != null && !result.isEmpty()) {
-                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
-                        out.write(new Gson().toJson(result));
-                        logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
-                    } else {
-                        request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
-                        out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
-                        logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
-                    }
+                if (resultCount == count) {
+                    result = "true";
+                }
+                if (result != null && !result.isEmpty()) {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
+                    out.write(new Gson().toJson(result));
+                    logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.SUCCESS));
+                } else {
+                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_FAIL);
+                    out.write(new Gson().toJson(ApplicationConstants.HTTP_STATUS_FAIL));
+                    logger.info(Common.getLogMsg("HeadwiseIncomeBudgetSaveService", ApplicationConstants.AUTHENTICATION, ApplicationConstants.FAIL));
+                }
 //                } else {
 //                    request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_UNAUTHORIZED);
 //                    out.write(new Gson().toJson(new Common().onFailure(ApplicationConstants.HTTP_STATUS_UNAUTHORIZED, "Unauthorized access", null)));

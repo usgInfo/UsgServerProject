@@ -9,6 +9,7 @@ import com.accure.budget.dto.BudgetType;
 import com.accure.budget.dto.ConsolidateDepartmentExpence;
 import com.accure.budget.dto.ConsolidateExpenseBudget;
 import com.accure.budget.dto.CreateBudgetExpense;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.finance.dto.Ledger;
 import com.accure.hrms.dto.BudgetHeadMaster;
 import com.accure.user.dto.User;
@@ -109,7 +110,8 @@ public class ConsolidateExpenseBudgetManager {
         boolean result = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_EXPENSE_TABLE, Id, new Gson().toJson(consolidateExpenseBudgetrJson));
         return result;
     }
-public boolean updateIsConsolidateFlagOfFalseConsolidate(String id) throws Exception {
+
+    public boolean updateIsConsolidateFlagOfFalseConsolidate(String id) throws Exception {
 
         String existrelationJson = DBManager.getDbConnection().fetch(ApplicationConstants.CONSOLIDATE_DEPARTMENT_EXPENSE, id);
         List<ConsolidateDepartmentExpence> incomeBudgetList = new Gson().fromJson(existrelationJson, new TypeToken<List<ConsolidateDepartmentExpence>>() {
@@ -120,6 +122,7 @@ public boolean updateIsConsolidateFlagOfFalseConsolidate(String id) throws Excep
         boolean result = DBManager.getDbConnection().update(ApplicationConstants.CONSOLIDATE_DEPARTMENT_EXPENSE, id, new Gson().toJson(obj));
         return result;
     }
+
     public boolean SubmitData(String Id, String loginUserId) throws Exception {
         if (Id == null || Id.isEmpty()) {
             return false;
@@ -485,7 +488,24 @@ public boolean updateIsConsolidateFlagOfFalseConsolidate(String id) throws Excep
 //
 //        return String.valueOf(numb);
 //    }
+    public String checkDuplicate(ConsolidateExpenseBudget obj) {
+//        HashMap<String, Object> duplicateConditionMap = new HashMap<String, Object>();
+//        duplicateConditionMap.put("ddo", obj.getDdo());
+//        duplicateConditionMap.put("fundType", obj.getFundType());
+//        duplicateConditionMap.put("sector", obj.getSector());
+//        duplicateConditionMap.put("financialYear", obj.getFinancialYear());
+//        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+//        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+//        duplicateConditionMap.put("incomeBudgetIdList", obj.getIncomeBudgetIdList());
+//        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+//        if (Duplicate.hasDuplicateforSave(ApplicationConstants.CONSOLIDATE_EXPENSE_TABLE, duplicateConditionMap)) {
+//            return ApplicationConstants.DUPLICATE_MESSAGE;
+//        }
+        return "proceed";
+    }
+
     public String getSlNumber(String year, String fundType, String sector, String budgetType) throws Exception {
+
         String result = new ConsolidateExpenseBudgetManager().fetchAllBasedOnFinancialYear(year, fundType, sector, budgetType);
         List<ConsolidateExpenseBudget> loanApplyList = new Gson().fromJson(result, new TypeToken<List<ConsolidateExpenseBudget>>() {
         }.getType());

@@ -60,12 +60,17 @@ public class ExtraProvisionSaveService extends HttpServlet {
                 String result = "";
 
                 if (status.equals("Save")) {
+
                     int resultCount = 0;
                     for (Iterator<CreateIncomeBudget> iterator = list.iterator(); iterator.hasNext();) {
                         CreateIncomeBudget next = iterator.next();
-
-                        if (new ExtraProvisionIncomeManager().save(next, loginUserId) != "") {
-                            resultCount++;
+                        String checkDuplicate = new ExtraProvisionIncomeManager().checkDuplicateCon(next);
+                        if (checkDuplicate.equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                            result = ApplicationConstants.DUPLICATE_MESSAGE;
+                        } else {
+                            if (new ExtraProvisionIncomeManager().save(next, loginUserId) != "") {
+                                resultCount++;
+                            }
                         }
                     }
                     result = "false";

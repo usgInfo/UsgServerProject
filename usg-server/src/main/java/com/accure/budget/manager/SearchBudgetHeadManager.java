@@ -11,6 +11,7 @@ import com.accure.budget.dto.ConsolidateIncomeBudget;
 import com.accure.budget.dto.CreateIncomeBudget;
 import com.accure.budget.dto.HeadwiseIncomeBudget;
 import static com.accure.budget.manager.ConsolidateIncomeBudgetManager.SUBMIT;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.hrms.dto.BudgetHeadMaster;
 import com.accure.hrms.manager.BudgetHeadMappingManager;
 import com.accure.user.dto.User;
@@ -47,7 +48,6 @@ public class SearchBudgetHeadManager {
         BasicDBObject regexQuery = new BasicDBObject();
         DB db = DBManager.getDB();
         DBCollection collection = db.getCollection(ApplicationConstants.HEADWISE_INCOME_BUDGET_MASTER);
-
         if (emp.getDdo() != null) {
             regexQuery.put("ddo",
                     new BasicDBObject("$regex", emp.getDdo()));
@@ -162,6 +162,24 @@ public class SearchBudgetHeadManager {
             return sanctionList;
         }
         return listNew;
+    }
+
+    public String checkDuplicateCon(HeadwiseIncomeBudget obj,List deptData) {
+//        HashMap<String,Object> duplicateConditionMap = new HashMap<String, Object>();
+//        duplicateConditionMap.put("ddo", obj.getDdo());
+//        duplicateConditionMap.put("location", obj.getLocation());
+//        duplicateConditionMap.put("fundType", obj.getFundType());
+//        duplicateConditionMap.put("sector", obj.getSector());
+//        duplicateConditionMap.put("financialYear", obj.getFinancialYear());
+//        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+//        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+//        duplicateConditionMap.put("departments", deptData);
+//        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+//        if (Duplicate.hasDuplicateforSave(ApplicationConstants.HEADWISE_INCOME_BUDGET_MASTER, duplicateConditionMap)) {
+//            return ApplicationConstants.DUPLICATE_MESSAGE;
+//
+//        }
+        return "proceed";
     }
 
     public String save(HeadwiseIncomeBudget next, String loginUserId, List deptData) throws Exception {

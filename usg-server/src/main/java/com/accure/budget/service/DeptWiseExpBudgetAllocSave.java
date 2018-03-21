@@ -7,6 +7,7 @@ package com.accure.budget.service;
 
 import com.accure.budget.dto.DeptWiseExpBudgetAllocation;
 import com.accure.budget.manager.DepartmentWiseExpAlloManager;
+import com.accure.budget.manager.DepartmentWiseIncAlloManager;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.SessionManager;
@@ -51,12 +52,15 @@ public class DeptWiseExpBudgetAllocSave extends HttpServlet {
                     List<DeptWiseExpBudgetAllocation> list = new Gson().fromJson(headlist, new TypeToken<List<DeptWiseExpBudgetAllocation>>() {
                     }.getType());
                     String result = null;
-
                     for (DeptWiseExpBudgetAllocation cl : list) {
-                        result = new DepartmentWiseExpAlloManager().save(cl, userid);
+                        String checkDuplicate = new DepartmentWiseExpAlloManager().checkDuplicateCon(cl);
+                        if (checkDuplicate.equalsIgnoreCase(ApplicationConstants.DUPLICATE_MESSAGE)) {
+                            result = ApplicationConstants.DUPLICATE_MESSAGE;
+                        } else {
+                            result = new DepartmentWiseExpAlloManager().save(cl, userid);
 
+                        }
                     }
-
                     if (result != null && !result.isEmpty()) {
                         request.setAttribute("statuscode", ApplicationConstants.HTTP_STATUS_SUCCESS);
                         out.write(new Gson().toJson(result));

@@ -12,6 +12,7 @@ import com.accure.budget.dto.FinancialYear;
 import com.accure.budget.dto.PreviousBudgetAmountDetails;
 import com.accure.hrms.dto.BudgetHeadMaster;
 import com.accure.budget.dto.ddoHeadCodeMapping;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.finance.dto.DDO;
 import com.accure.finance.dto.Ledger;
 import com.accure.hrms.manager.SortByDisplayLeave;
@@ -214,8 +215,20 @@ public class BudgetIncomeManager {
         return result;
     }
 
-    public String getSlNumber(String year, String ddo, String location, String budgetType) throws Exception {
+    public String getSlNumber(String year, String ddo, String location, String budgetType, CreateIncomeBudget obj) throws Exception {
+        HashMap<String, String> duplicateConditionMap = new HashMap<String, String>();
+        duplicateConditionMap.put("ddo", obj.getDdo());
+        duplicateConditionMap.put("location", obj.getLocation());
+        duplicateConditionMap.put("fundType", obj.getFundType());
+        duplicateConditionMap.put("sector", obj.getSector());
+        duplicateConditionMap.put("financialYear", obj.getFinancialYear());
+        duplicateConditionMap.put("department", obj.getDepartment());
+        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        if (Duplicate.hasDuplicateforSave(ApplicationConstants.CREATE_INCOME_BUDGET_TABLE, duplicateConditionMap)) {
+            return ApplicationConstants.DUPLICATE_MESSAGE;
 
+        }
         String result = new BudgetIncomeManager().fetchAllBasedOnYear(year, ddo, location, budgetType);
         List<CreateIncomeBudget> loanApplyList = new Gson().fromJson(result, new TypeToken<List<CreateIncomeBudget>>() {
         }.getType());
@@ -381,11 +394,12 @@ public class BudgetIncomeManager {
 
         conditionMap2.put("ddo", assJson.getDdo());
         conditionMap2.put("fundType", assJson.getFundType());
-        conditionMap2.put("budgetHead", assJson.getBudgetHead());
+//        conditionMap2.put("budgetHead", assJson.getBudgetHead());
         conditionMap2.put("budgetTypeName", assJson.getBudgetTypeName());
         conditionMap2.put("location", assJson.getLocation());
         conditionMap2.put("financialYear", assJson.getFinancialYear());
         conditionMap2.put("sector", assJson.getSector());
+        conditionMap2.put("srNo", assJson.getSrNo());
         conditionMap2.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
         String budgetJson1 = DBManager.getDbConnection().fetchAllRowsByConditions(ApplicationConstants.CREATE_INCOME_BUDGET_TABLE, conditionMap2);
         //System.out.println("--budgetJson--" + budgetJson1);

@@ -8,6 +8,7 @@ package com.accure.budget.manager;
 import com.accure.budget.dto.CreateIncomeBudget;
 import com.accure.budget.dto.DeptWiseIncBudgetAllocation;
 import static com.accure.budget.manager.SanctionUniversityExpenseBudgetManager.SUBMIT;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
 import com.accure.usg.common.manager.DBManager;
@@ -39,6 +40,22 @@ public class ExtraProvisionIncomeManager {
             return Id;
         }
         return null;
+    }
+
+    public String checkDuplicateCon(CreateIncomeBudget obj) {
+        HashMap<String, String> duplicateConditionMap = new HashMap<String, String>();
+        duplicateConditionMap.put("fundType", obj.getFundType());
+        duplicateConditionMap.put("sector", obj.getSector());
+        duplicateConditionMap.put("financialYear", obj.getFinancialYear());
+        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+        duplicateConditionMap.put("department", obj.getDepartment());
+        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        if (Duplicate.hasDuplicateforSave(ApplicationConstants.EXTRA_PROVISION_INCOME, duplicateConditionMap)) {
+            return ApplicationConstants.DUPLICATE_MESSAGE;
+
+        }
+        return "proceed";
     }
 
     public String SearchData(CreateIncomeBudget obj) throws Exception {

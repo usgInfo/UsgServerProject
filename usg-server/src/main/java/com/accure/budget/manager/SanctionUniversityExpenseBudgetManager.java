@@ -9,6 +9,7 @@ import com.accure.budget.dto.BudgetSector;
 import com.accure.budget.dto.BudgetType;
 import com.accure.budget.dto.ConsolidateExpenseBudget;
 import com.accure.budget.dto.SanctionUniversityExpenseBudget;
+import com.accure.common.duplicate.Duplicate;
 import com.accure.hrms.dto.FinancialYear;
 import com.accure.user.dto.User;
 import com.accure.user.manager.UserManager;
@@ -475,6 +476,23 @@ public class SanctionUniversityExpenseBudgetManager {
 //        }.getType());
 //        return new Gson().toJson(list);
         return result1;
+    }
+
+    public String checkDuplicate(SanctionUniversityExpenseBudget obj) {
+        HashMap<String, String> duplicateConditionMap = new HashMap<String, String>();
+        duplicateConditionMap.put("ddo", obj.getDdo());
+        duplicateConditionMap.put("fundType", obj.getFundType());
+        duplicateConditionMap.put("sector", obj.getSector());
+        duplicateConditionMap.put("financialYear", obj.getFinancialYear());
+        duplicateConditionMap.put("budgetType", obj.getBudgetType());
+        duplicateConditionMap.put("ledgerId", obj.getLedgerId());
+        duplicateConditionMap.put("consolidateExpenseBudgetId", obj.getConsolidateExpenseBudgetId());
+        duplicateConditionMap.put(ApplicationConstants.STATUS, ApplicationConstants.ACTIVE);
+        if (Duplicate.hasDuplicateforSave(ApplicationConstants.SACTION_UNIVERSITY_EXPENSE, duplicateConditionMap)) {
+            return ApplicationConstants.DUPLICATE_MESSAGE;
+
+        }
+        return "proceed";
     }
 
     public String getSlNumber(String year, String fundType, String sector, String budgetType) throws Exception {
